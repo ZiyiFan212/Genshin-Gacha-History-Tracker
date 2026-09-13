@@ -1,0 +1,1434 @@
+{
+  "character": {
+    "en": "Character",
+    "zh": "角色"
+  },
+  "weapon": {
+    "en": "Weapon",
+    "zh": "武器"
+  },
+  "10000089": {
+    "en": "Furina",
+    "zh": "芙宁娜"
+  },
+  "10000130": {
+    "en": "Linnea",
+    "zh": "莉奈娅"
+  },
+  "10000131": {
+    "en": "Nicole",
+    "zh": "尼可"
+  },
+  "10000129": {
+    "en": "Lohen",
+    "zh": "洛恩"
+  },
+  "10000132": {
+    "en": "Prune",
+    "zh": "布伦妮"
+  },
+  "10000133": {
+    "en": "Sandrone",
+    "zh": "桑多涅"
+  },
+  "10000122": {
+    "en": "Nefer",
+    "zh": "奈芙尔"
+  },
+  "10000123": {
+    "en": "Durin",
+    "zh": "杜林"
+  },
+  "10000002": {
+    "en": "Kamisato Ayaka",
+    "zh": "神里绫华"
+  },
+  "10000124": {
+    "en": "Jahoda",
+    "zh": "雅珂达"
+  },
+  "10000003": {
+    "en": "Jean",
+    "zh": "琴"
+  },
+  "10000125": {
+    "en": "Columbina",
+    "zh": "哥伦比娅"
+  },
+  "10000005": {
+    "en": "Aether",
+    "zh": "空"
+  },
+  "10000126": {
+    "en": "Zibai",
+    "zh": "兹白"
+  },
+  "10000127": {
+    "en": "Illuga",
+    "zh": "叶洛亚"
+  },
+  "10000006": {
+    "en": "Lisa",
+    "zh": "丽莎"
+  },
+  "10000007": {
+    "en": "Lumine",
+    "zh": "荧"
+  },
+  "10000128": {
+    "en": "Varka",
+    "zh": "法尔伽"
+  },
+  "10000092": {
+    "en": "Gaming",
+    "zh": "嘉明"
+  },
+  "10000093": {
+    "en": "Xianyun",
+    "zh": "闲云"
+  },
+  "10000094": {
+    "en": "Chiori",
+    "zh": "千织"
+  },
+  "10000095": {
+    "en": "Sigewinne",
+    "zh": "希格雯"
+  },
+  "10000096": {
+    "en": "Arlecchino",
+    "zh": "阿蕾奇诺"
+  },
+  "10000097": {
+    "en": "Sethos",
+    "zh": "赛索斯"
+  },
+  "10000098": {
+    "en": "Clorinde",
+    "zh": "克洛琳德"
+  },
+  "10000099": {
+    "en": "Emilie",
+    "zh": "艾梅莉埃"
+  },
+  "10000090": {
+    "en": "Chevreuse",
+    "zh": "夏沃蕾"
+  },
+  "10000091": {
+    "en": "Navia",
+    "zh": "娜维娅"
+  },
+  "10000119": {
+    "en": "Lauma",
+    "zh": "菈乌玛"
+  },
+  "10000078": {
+    "en": "Alhaitham",
+    "zh": "艾尔海森"
+  },
+  "10000111": {
+    "en": "Varesa",
+    "zh": "瓦雷莎"
+  },
+  "10000079": {
+    "en": "Dehya",
+    "zh": "迪希雅"
+  },
+  "10000112": {
+    "en": "Escoffier",
+    "zh": "爱可菲"
+  },
+  "10000113": {
+    "en": "Ifa",
+    "zh": "伊法"
+  },
+  "10000114": {
+    "en": "Skirk",
+    "zh": "丝柯克"
+  },
+  "10000115": {
+    "en": "Dahlia",
+    "zh": "塔利雅"
+  },
+  "10000116": {
+    "en": "Ineffa",
+    "zh": "伊涅芙"
+  },
+  "10000117": {
+    "en": "Manekin",
+    "zh": "奇偶·男性"
+  },
+  "10000118": {
+    "en": "Manekina",
+    "zh": "奇偶·女性"
+  },
+  "10000081": {
+    "en": "Kaveh",
+    "zh": "卡维"
+  },
+  "10000082": {
+    "en": "Baizhu",
+    "zh": "白术"
+  },
+  "10000083": {
+    "en": "Lynette",
+    "zh": "琳妮特"
+  },
+  "10000084": {
+    "en": "Lyney",
+    "zh": "林尼"
+  },
+  "10000085": {
+    "en": "Freminet",
+    "zh": "菲米尼"
+  },
+  "10000086": {
+    "en": "Wriothesley",
+    "zh": "莱欧斯利"
+  },
+  "10000120": {
+    "en": "Flins",
+    "zh": "菲林斯"
+  },
+  "10000087": {
+    "en": "Neuvillette",
+    "zh": "那维莱特"
+  },
+  "10000121": {
+    "en": "Aino",
+    "zh": "爱诺"
+  },
+  "10000088": {
+    "en": "Charlotte",
+    "zh": "夏洛蒂"
+  },
+  "10000080": {
+    "en": "Mika",
+    "zh": "米卡"
+  },
+  "10000108": {
+    "en": "Lan Yan",
+    "zh": "蓝砚"
+  },
+  "10000109": {
+    "en": "Yumemizuki Mizuki",
+    "zh": "梦见月瑞希"
+  },
+  "10000067": {
+    "en": "Collei",
+    "zh": "柯莱"
+  },
+  "10000100": {
+    "en": "Kachina",
+    "zh": "卡齐娜"
+  },
+  "10000068": {
+    "en": "Dori",
+    "zh": "多莉"
+  },
+  "10000101": {
+    "en": "Kinich",
+    "zh": "基尼奇"
+  },
+  "10000102": {
+    "en": "Mualani",
+    "zh": "玛拉妮"
+  },
+  "10000069": {
+    "en": "Tighnari",
+    "zh": "提纳里"
+  },
+  "10000103": {
+    "en": "Xilonen",
+    "zh": "希诺宁"
+  },
+  "10000104": {
+    "en": "Chasca",
+    "zh": "恰斯卡"
+  },
+  "10000105": {
+    "en": "Ororon",
+    "zh": "欧洛伦"
+  },
+  "10000106": {
+    "en": "Mavuika",
+    "zh": "玛薇卡"
+  },
+  "10000107": {
+    "en": "Citlali",
+    "zh": "茜特菈莉"
+  },
+  "10000070": {
+    "en": "Nilou",
+    "zh": "妮露"
+  },
+  "10000071": {
+    "en": "Cyno",
+    "zh": "赛诺"
+  },
+  "10000072": {
+    "en": "Candace",
+    "zh": "坎蒂丝"
+  },
+  "10000073": {
+    "en": "Nahida",
+    "zh": "纳西妲"
+  },
+  "10000074": {
+    "en": "Layla",
+    "zh": "莱依拉"
+  },
+  "10000075": {
+    "en": "Wanderer",
+    "zh": "流浪者"
+  },
+  "10000076": {
+    "en": "Faruzan",
+    "zh": "珐露珊"
+  },
+  "10000110": {
+    "en": "Iansan",
+    "zh": "伊安珊"
+  },
+  "10000077": {
+    "en": "Yaoyao",
+    "zh": "瑶瑶"
+  },
+  "10000056": {
+    "en": "Kujou Sara",
+    "zh": "九条裟罗"
+  },
+  "10000057": {
+    "en": "Arataki Itto",
+    "zh": "荒泷一斗"
+  },
+  "10000058": {
+    "en": "Yae Miko",
+    "zh": "八重神子"
+  },
+  "10000059": {
+    "en": "Shikanoin Heizou",
+    "zh": "鹿野院平藏"
+  },
+  "10000060": {
+    "en": "Yelan",
+    "zh": "夜兰"
+  },
+  "10000061": {
+    "en": "Kirara",
+    "zh": "绮良良"
+  },
+  "10000062": {
+    "en": "Aloy",
+    "zh": "埃洛伊"
+  },
+  "10000063": {
+    "en": "Shenhe",
+    "zh": "申鹤"
+  },
+  "10000064": {
+    "en": "Yun Jin",
+    "zh": "云堇"
+  },
+  "10000065": {
+    "en": "Kuki Shinobu",
+    "zh": "久岐忍"
+  },
+  "10000066": {
+    "en": "Kamisato Ayato",
+    "zh": "神里绫人"
+  },
+  "10000045": {
+    "en": "Rosaria",
+    "zh": "罗莎莉亚"
+  },
+  "10000046": {
+    "en": "Hu Tao",
+    "zh": "胡桃"
+  },
+  "10000047": {
+    "en": "Kaedehara Kazuha",
+    "zh": "枫原万叶"
+  },
+  "10000048": {
+    "en": "Yanfei",
+    "zh": "烟绯"
+  },
+  "10000049": {
+    "en": "Yoimiya",
+    "zh": "宵宫"
+  },
+  "10000050": {
+    "en": "Thoma",
+    "zh": "托马"
+  },
+  "10000051": {
+    "en": "Eula",
+    "zh": "优菈"
+  },
+  "10000052": {
+    "en": "Raiden Shogun",
+    "zh": "雷电将军"
+  },
+  "10000053": {
+    "en": "Sayu",
+    "zh": "早柚"
+  },
+  "10000054": {
+    "en": "Sangonomiya Kokomi",
+    "zh": "珊瑚宫心海"
+  },
+  "10000055": {
+    "en": "Gorou",
+    "zh": "五郎"
+  },
+  "10000034": {
+    "en": "Noelle",
+    "zh": "诺艾尔"
+  },
+  "10000035": {
+    "en": "Qiqi",
+    "zh": "七七"
+  },
+  "10000036": {
+    "en": "Chongyun",
+    "zh": "重云"
+  },
+  "10000037": {
+    "en": "Ganyu",
+    "zh": "甘雨"
+  },
+  "10000038": {
+    "en": "Albedo",
+    "zh": "阿贝多"
+  },
+  "10000039": {
+    "en": "Diona",
+    "zh": "迪奥娜"
+  },
+  "10000041": {
+    "en": "Mona",
+    "zh": "莫娜"
+  },
+  "10000042": {
+    "en": "Keqing",
+    "zh": "刻晴"
+  },
+  "10000043": {
+    "en": "Sucrose",
+    "zh": "砂糖"
+  },
+  "10000044": {
+    "en": "Xinyan",
+    "zh": "辛焱"
+  },
+  "10000023": {
+    "en": "Xiangling",
+    "zh": "香菱"
+  },
+  "10000024": {
+    "en": "Beidou",
+    "zh": "北斗"
+  },
+  "10000025": {
+    "en": "Xingqiu",
+    "zh": "行秋"
+  },
+  "10000026": {
+    "en": "Xiao",
+    "zh": "魈"
+  },
+  "10000027": {
+    "en": "Ningguang",
+    "zh": "凝光"
+  },
+  "10000029": {
+    "en": "Klee",
+    "zh": "可莉"
+  },
+  "10000030": {
+    "en": "Zhongli",
+    "zh": "钟离"
+  },
+  "10000031": {
+    "en": "Fischl",
+    "zh": "菲谢尔"
+  },
+  "10000032": {
+    "en": "Bennett",
+    "zh": "班尼特"
+  },
+  "10000033": {
+    "en": "Tartaglia",
+    "zh": "达达利亚"
+  },
+  "10000014": {
+    "en": "Barbara",
+    "zh": "芭芭拉"
+  },
+  "10000015": {
+    "en": "Kaeya",
+    "zh": "凯亚"
+  },
+  "10000016": {
+    "en": "Diluc",
+    "zh": "迪卢克"
+  },
+  "10000020": {
+    "en": "Razor",
+    "zh": "雷泽"
+  },
+  "10000021": {
+    "en": "Amber",
+    "zh": "安柏"
+  },
+  "10000022": {
+    "en": "Venti",
+    "zh": "温迪"
+  },
+  "11504": {
+    "en": "Summit Shaper",
+    "zh": "斫峰之刃"
+  },
+  "11503": {
+    "en": "Freedom-Sworn",
+    "zh": "苍古自由之誓"
+  },
+  "11505": {
+    "en": "Primordial Jade Cutter",
+    "zh": "磐岩结绿"
+  },
+  "11509": {
+    "en": "Mistsplitter Reforged",
+    "zh": "雾切之回光"
+  },
+  "15304": {
+    "en": "Slingshot",
+    "zh": "弹弓"
+  },
+  "15425": {
+    "en": "Song of Stillness",
+    "zh": "静谧之曲"
+  },
+  "15303": {
+    "en": "Recurve Bow",
+    "zh": "反曲弓"
+  },
+  "15424": {
+    "en": "Scion of the Blazing Sun",
+    "zh": "烈阳之嗣"
+  },
+  "15302": {
+    "en": "Sharpshooter's Oath",
+    "zh": "神射手之誓"
+  },
+  "15301": {
+    "en": "Raven Bow",
+    "zh": "鸦羽弓"
+  },
+  "15427": {
+    "en": "Range Gauge",
+    "zh": "测距规"
+  },
+  "11502": {
+    "en": "Skyward Blade",
+    "zh": "天空之刃"
+  },
+  "11501": {
+    "en": "Aquila Favonia",
+    "zh": "风鹰剑"
+  },
+  "15426": {
+    "en": "Cloudforged",
+    "zh": "筑云"
+  },
+  "15305": {
+    "en": "Messenger",
+    "zh": "信使"
+  },
+  "15432": {
+    "en": "Sequence of Solitude",
+    "zh": "冷寂迸音"
+  },
+  "14101": {
+    "en": "Apprentice's Notes",
+    "zh": "学徒笔记"
+  },
+  "15431": {
+    "en": "Chain Breaker",
+    "zh": "碎链"
+  },
+  "15430": {
+    "en": "Flower-Wreathed Feathers",
+    "zh": "缀花之翎"
+  },
+  "11515": {
+    "en": "Absolution",
+    "zh": "赦罪"
+  },
+  "11514": {
+    "en": "Uraku Misugiri",
+    "zh": "有乐御簾切"
+  },
+  "11517": {
+    "en": "Azurelight",
+    "zh": "苍耀"
+  },
+  "11516": {
+    "en": "Peak Patrol Song",
+    "zh": "岩峰巡歌"
+  },
+  "15516": {
+    "en": "Golden Frostbound Oath",
+    "zh": "霜结的誓金枝"
+  },
+  "14523": {
+    "en": "Angelos Heptades",
+    "zh": "尘光七谕"
+  },
+  "13517": {
+    "en": "Disaster and Remorse",
+    "zh": "灾悔"
+  },
+  "12516": {
+    "en": "A Teaspoon of Transcendence",
+    "zh": "超越之匙"
+  },
+  "11518": {
+    "en": "Athame Artis",
+    "zh": "黑蚀"
+  },
+  "15434": {
+    "en": "Rainbow Serpent's Rain Bow",
+    "zh": "虹蛇的雨弦"
+  },
+  "15433": {
+    "en": "Snare Hook",
+    "zh": "罗网勾针"
+  },
+  "11511": {
+    "en": "Key of Khaj-Nisut",
+    "zh": "圣显之钥"
+  },
+  "11510": {
+    "en": "Haran Geppaku Futsu",
+    "zh": "波乱月白经津"
+  },
+  "11513": {
+    "en": "Splendor of Tranquil Waters",
+    "zh": "静水流涌之辉"
+  },
+  "11512": {
+    "en": "Light of Foliar Incision",
+    "zh": "裁叶萃光"
+  },
+  "14430": {
+    "en": "Waveriding Whirl",
+    "zh": "乘浪的回旋"
+  },
+  "14431": {
+    "en": "Ring of Yaxche",
+    "zh": "木棉之环"
+  },
+  "15409": {
+    "en": "The Viridescent Hunt",
+    "zh": "苍翠猎弓"
+  },
+  "15408": {
+    "en": "Blackcliff Warbow",
+    "zh": "黑岩战弓"
+  },
+  "14434": {
+    "en": "Dawning Frost",
+    "zh": "霜辰"
+  },
+  "15403": {
+    "en": "Sacrificial Bow",
+    "zh": "祭礼弓"
+  },
+  "15402": {
+    "en": "The Stringless",
+    "zh": "绝弦"
+  },
+  "13101": {
+    "en": "Beginner's Protector",
+    "zh": "新手长枪"
+  },
+  "14432": {
+    "en": "Etherlight Spindlelute",
+    "zh": "天光的纺琴"
+  },
+  "15401": {
+    "en": "Favonius Warbow",
+    "zh": "西风猎弓"
+  },
+  "14433": {
+    "en": "Blackmarrow Lantern",
+    "zh": "乌髓孑灯"
+  },
+  "15407": {
+    "en": "Compound Bow",
+    "zh": "钢轮弓"
+  },
+  "15406": {
+    "en": "Prototype Crescent",
+    "zh": "试作澹月"
+  },
+  "15405": {
+    "en": "Rust",
+    "zh": "弓藏"
+  },
+  "15404": {
+    "en": "Royal Bow",
+    "zh": "宗室长弓"
+  },
+  "15410": {
+    "en": "Alley Hunter",
+    "zh": "暗巷猎手"
+  },
+  "15419": {
+    "en": "Ibis Piercer",
+    "zh": "鹮穿之喙"
+  },
+  "15414": {
+    "en": "Hamayumi",
+    "zh": "破魔之弓"
+  },
+  "15413": {
+    "en": "Windblume Ode",
+    "zh": "风花之颂"
+  },
+  "15412": {
+    "en": "Mitternachts Waltz",
+    "zh": "幽夜华尔兹"
+  },
+  "14201": {
+    "en": "Pocket Grimoire",
+    "zh": "口袋魔导书"
+  },
+  "15411": {
+    "en": "Fading Twilight",
+    "zh": "落霞"
+  },
+  "15418": {
+    "en": "End of the Line",
+    "zh": "竭泽"
+  },
+  "15417": {
+    "en": "King's Squire",
+    "zh": "王下近侍"
+  },
+  "15416": {
+    "en": "Mouun's Moon",
+    "zh": "曚云之月"
+  },
+  "15415": {
+    "en": "Predator",
+    "zh": "掠食者"
+  },
+  "15509": {
+    "en": "Thundering Pulse",
+    "zh": "飞雷之弦振"
+  },
+  "15508": {
+    "en": "Aqua Simulacra",
+    "zh": "若水"
+  },
+  "15507": {
+    "en": "Polar Star",
+    "zh": "冬极白星"
+  },
+  "15502": {
+    "en": "Amos' Bow",
+    "zh": "阿莫斯之弓"
+  },
+  "14412": {
+    "en": "Frostbearer",
+    "zh": "忍冬之果"
+  },
+  "14413": {
+    "en": "Dodoco Tales",
+    "zh": "嘟嘟可故事集"
+  },
+  "15501": {
+    "en": "Skyward Harp",
+    "zh": "天空之翼"
+  },
+  "14410": {
+    "en": "Wine and Song",
+    "zh": "暗巷的酒与诗"
+  },
+  "13201": {
+    "en": "Iron Point",
+    "zh": "铁尖枪"
+  },
+  "14416": {
+    "en": "Wandering Evenstar",
+    "zh": "流浪的晚星"
+  },
+  "14417": {
+    "en": "Fruit of Fulfillment",
+    "zh": "盈满之实"
+  },
+  "14414": {
+    "en": "Hakushin Ring",
+    "zh": "白辰之环"
+  },
+  "15503": {
+    "en": "Elegy for the End",
+    "zh": "终末嗟叹之诗"
+  },
+  "14415": {
+    "en": "Oathsworn Eye",
+    "zh": "证誓之明瞳"
+  },
+  "15513": {
+    "en": "Silvershower Heartstrings",
+    "zh": "白雨心弦"
+  },
+  "14302": {
+    "en": "Thrilling Tales of Dragon Slayers",
+    "zh": "讨龙英杰谭"
+  },
+  "14303": {
+    "en": "Otherworldly Story",
+    "zh": "异世界行记"
+  },
+  "14424": {
+    "en": "Sacrificial Jade",
+    "zh": "遗祀玉珑"
+  },
+  "15512": {
+    "en": "The First Great Magic",
+    "zh": "最初的大魔术"
+  },
+  "15511": {
+    "en": "Hunter's Path",
+    "zh": "猎人之径"
+  },
+  "14301": {
+    "en": "Magic Guide",
+    "zh": "魔导绪论"
+  },
+  "14427": {
+    "en": "Ash-Graven Drinking Horn",
+    "zh": "苍纹角杯"
+  },
+  "14304": {
+    "en": "Emerald Orb",
+    "zh": "翡玉法球"
+  },
+  "14425": {
+    "en": "Flowing Purity",
+    "zh": "纯水流华"
+  },
+  "15515": {
+    "en": "The Daybreak Chronicles",
+    "zh": "黎明破晓之史"
+  },
+  "15514": {
+    "en": "Astral Vulture's Crimson Plumage",
+    "zh": "星鹫赤羽"
+  },
+  "14426": {
+    "en": "Ballad of the Boundless Blue",
+    "zh": "无垠蔚蓝之歌"
+  },
+  "14305": {
+    "en": "Twin Nephrite",
+    "zh": "甲级宝珏"
+  },
+  "14519": {
+    "en": "Vivid Notions",
+    "zh": "溢彩心念"
+  },
+  "14517": {
+    "en": "Starcaller's Watch",
+    "zh": "祭星者之望"
+  },
+  "14518": {
+    "en": "Sunny Morning Sleep-In",
+    "zh": "寝正月初晴"
+  },
+  "14511": {
+    "en": "A Thousand Floating Dreams",
+    "zh": "千夜浮梦"
+  },
+  "13301": {
+    "en": "White Tassel",
+    "zh": "白缨枪"
+  },
+  "13302": {
+    "en": "Halberd",
+    "zh": "钺矛"
+  },
+  "14512": {
+    "en": "Tulaytullah's Remembrance",
+    "zh": "图莱杜拉的回忆"
+  },
+  "14515": {
+    "en": "Crane's Echoing Call",
+    "zh": "鹤鸣余音"
+  },
+  "13426": {
+    "en": "Dialogues of the Desert Sages",
+    "zh": "沙中伟贤的对答"
+  },
+  "13427": {
+    "en": "Prospector's Drill",
+    "zh": "勘探钻机"
+  },
+  "14516": {
+    "en": "Surf's Up",
+    "zh": "冲浪时光"
+  },
+  "13424": {
+    "en": "Ballad of the Fjords",
+    "zh": "峡湾长歌"
+  },
+  "13303": {
+    "en": "Black Tassel",
+    "zh": "黑缨枪"
+  },
+  "14513": {
+    "en": "Cashflow Supervision",
+    "zh": "金流监督"
+  },
+  "13425": {
+    "en": "Rightful Reward",
+    "zh": "公义的酬报"
+  },
+  "14514": {
+    "en": "Tome of the Eternal Flow",
+    "zh": "万世流涌大典"
+  },
+  "13430": {
+    "en": "Mountain-Bracing Bolt",
+    "zh": "镇山之钉"
+  },
+  "14409": {
+    "en": "Eye of Perception",
+    "zh": "昭心"
+  },
+  "14407": {
+    "en": "Mappa Mare",
+    "zh": "万国诸海图谱"
+  },
+  "14408": {
+    "en": "Blackcliff Agate",
+    "zh": "黑岩绯玉"
+  },
+  "14401": {
+    "en": "Favonius Codex",
+    "zh": "西风秘典"
+  },
+  "14522": {
+    "en": "Nocturne's Curtain Call",
+    "zh": "帷间夜曲"
+  },
+  "13433": {
+    "en": "Prospector's Shovel",
+    "zh": "掘金之锹"
+  },
+  "12101": {
+    "en": "Waster Greatsword",
+    "zh": "训练大剑"
+  },
+  "13434": {
+    "en": "Sacrificer's Staff",
+    "zh": "圣祭者的辉杖"
+  },
+  "14402": {
+    "en": "The Widsith",
+    "zh": "流浪乐章"
+  },
+  "13431": {
+    "en": "Footprint of the Rainbow",
+    "zh": "虹的行迹"
+  },
+  "14520": {
+    "en": "Nightweaver's Looking Glass",
+    "zh": "纺夜天镜"
+  },
+  "14521": {
+    "en": "Reliquary of Truth",
+    "zh": "真语秘匣"
+  },
+  "13432": {
+    "en": "Tamayuratei no Ohanashi",
+    "zh": "且住亭御咄"
+  },
+  "14405": {
+    "en": "Solar Pearl",
+    "zh": "匣里日月"
+  },
+  "14406": {
+    "en": "Prototype Amber",
+    "zh": "试作金珀"
+  },
+  "14403": {
+    "en": "Sacrificial Fragments",
+    "zh": "祭礼残章"
+  },
+  "14404": {
+    "en": "Royal Grimoire",
+    "zh": "宗室秘法录"
+  },
+  "13408": {
+    "en": "Royal Spear",
+    "zh": "宗室猎枪"
+  },
+  "13409": {
+    "en": "Dragonspine Spear",
+    "zh": "龙脊长枪"
+  },
+  "13406": {
+    "en": "Lithic Spear",
+    "zh": "千岩长枪"
+  },
+  "13407": {
+    "en": "Favonius Lance",
+    "zh": "西风长枪"
+  },
+  "12432": {
+    "en": "Flame-Forged Insight",
+    "zh": "拾慧铸熔"
+  },
+  "13401": {
+    "en": "Dragon's Bane",
+    "zh": "匣里灭辰"
+  },
+  "12433": {
+    "en": "Master Key",
+    "zh": "万能钥匙"
+  },
+  "12430": {
+    "en": "Fruitful Hook",
+    "zh": "硕果钩"
+  },
+  "11101": {
+    "en": "Dull Blade",
+    "zh": "无锋剑"
+  },
+  "12431": {
+    "en": "Earth Shaker",
+    "zh": "撼地者"
+  },
+  "13404": {
+    "en": "Blackcliff Pole",
+    "zh": "黑岩刺枪"
+  },
+  "13405": {
+    "en": "Deathmatch",
+    "zh": "决斗之枪"
+  },
+  "13402": {
+    "en": "Prototype Starglitter",
+    "zh": "试作星镰"
+  },
+  "13403": {
+    "en": "Crescent Pike",
+    "zh": "流月针"
+  },
+  "13419": {
+    "en": "Missive Windspear",
+    "zh": "风信之锋"
+  },
+  "14509": {
+    "en": "Kagura's Verity",
+    "zh": "神乐之真意"
+  },
+  "14506": {
+    "en": "Everlasting Moonglow",
+    "zh": "不灭月华"
+  },
+  "13417": {
+    "en": "Moonpiercer",
+    "zh": "贯月矢"
+  },
+  "14501": {
+    "en": "Skyward Atlas",
+    "zh": "天空之卷"
+  },
+  "12201": {
+    "en": "Old Merc's Pal",
+    "zh": "佣兵重剑"
+  },
+  "14504": {
+    "en": "Memory of Dust",
+    "zh": "尘世之锁"
+  },
+  "13415": {
+    "en": "\"The Catch\"",
+    "zh": "「渔获」"
+  },
+  "14505": {
+    "en": "Jadefall's Splendor",
+    "zh": "碧落之珑"
+  },
+  "13416": {
+    "en": "Wavebreaker's Fin",
+    "zh": "断浪长鳍"
+  },
+  "14502": {
+    "en": "Lost Prayer to the Sacred Winds",
+    "zh": "四风原典"
+  },
+  "13414": {
+    "en": "Kitain Cross Spear",
+    "zh": "喜多院十文字"
+  },
+  "13507": {
+    "en": "Calamity Queller",
+    "zh": "息灾"
+  },
+  "12418": {
+    "en": "Mailed Flower",
+    "zh": "饰铁之花"
+  },
+  "12416": {
+    "en": "Akuoumaru",
+    "zh": "恶王丸"
+  },
+  "13505": {
+    "en": "Primordial Jade Winged-Spear",
+    "zh": "和璞鸢"
+  },
+  "12417": {
+    "en": "Forest Regalia",
+    "zh": "森林王器"
+  },
+  "13509": {
+    "en": "Engulfing Lightning",
+    "zh": "薙草之稻光"
+  },
+  "12410": {
+    "en": "Lithic Blade",
+    "zh": "千岩古剑"
+  },
+  "12411": {
+    "en": "Snow-Tombed Starsilver",
+    "zh": "雪葬的星银"
+  },
+  "11201": {
+    "en": "Silver Sword",
+    "zh": "银剑"
+  },
+  "12414": {
+    "en": "Katsuragikiri Nagamasa",
+    "zh": "桂木斩长正"
+  },
+  "12415": {
+    "en": "Makhaira Aquamarine",
+    "zh": "玛海菈的水色"
+  },
+  "13504": {
+    "en": "Vortex Vanquisher",
+    "zh": "贯虹之槊"
+  },
+  "12412": {
+    "en": "Luxurious Sea-Lord",
+    "zh": "衔珠海皇"
+  },
+  "13501": {
+    "en": "Staff of Homa",
+    "zh": "护摩之杖"
+  },
+  "13502": {
+    "en": "Skyward Spine",
+    "zh": "天空之脊"
+  },
+  "12306": {
+    "en": "Skyrider Greatsword",
+    "zh": "飞天大御剑"
+  },
+  "13516": {
+    "en": "Bloodsoaked Ruins",
+    "zh": "血染荒城"
+  },
+  "12427": {
+    "en": "Portable Power Saw",
+    "zh": "便携动力锯"
+  },
+  "13511": {
+    "en": "Staff of the Scarlet Sands",
+    "zh": "赤沙之杖"
+  },
+  "12301": {
+    "en": "Ferrous Shadow",
+    "zh": "铁影阔剑"
+  },
+  "13514": {
+    "en": "Symphonist of Scents",
+    "zh": "香韵奏者"
+  },
+  "12425": {
+    "en": "Tidal Shadow",
+    "zh": "浪影阔剑"
+  },
+  "12303": {
+    "en": "White Iron Greatsword",
+    "zh": "白铁大剑"
+  },
+  "12302": {
+    "en": "Bloodtainted Greatsword",
+    "zh": "沐浴龙血的剑"
+  },
+  "13515": {
+    "en": "Fractured Halo",
+    "zh": "支离轮光"
+  },
+  "12426": {
+    "en": "\"Ultimate Overlord's Mega Magic Sword\"",
+    "zh": "「究极霸王超级魔剑」"
+  },
+  "13512": {
+    "en": "Crimson Moon's Semblance",
+    "zh": "赤月之形"
+  },
+  "12305": {
+    "en": "Debate Club",
+    "zh": "以理服人"
+  },
+  "13513": {
+    "en": "Lumidouce Elegy",
+    "zh": "柔灯挽歌"
+  },
+  "12424": {
+    "en": "Talking Stick",
+    "zh": "聊聊棒"
+  },
+  "15101": {
+    "en": "Hunter's Bow",
+    "zh": "猎弓"
+  },
+  "11306": {
+    "en": "Skyrider Sword",
+    "zh": "飞天御剑"
+  },
+  "11427": {
+    "en": "The Dockhand's Assistant",
+    "zh": "船坞长剑"
+  },
+  "11305": {
+    "en": "Fillet Blade",
+    "zh": "吃虎鱼刀"
+  },
+  "11426": {
+    "en": "Fleuve Cendre Ferryman",
+    "zh": "灰河渡手"
+  },
+  "12515": {
+    "en": "Gest of the Mighty Wolf",
+    "zh": "狼的武功歌"
+  },
+  "11428": {
+    "en": "Sword of Narzissenkreuz",
+    "zh": "水仙十字之剑"
+  },
+  "12510": {
+    "en": "Redhorn Stonethresher",
+    "zh": "赤角石溃杵"
+  },
+  "11421": {
+    "en": "Prized Isshin Blade",
+    "zh": "「一心传」名刀"
+  },
+  "11420": {
+    "en": "Prized Isshin Blade",
+    "zh": "「一心传」名刀"
+  },
+  "12513": {
+    "en": "Fang of the Mountain King",
+    "zh": "山王长牙"
+  },
+  "11302": {
+    "en": "Harbinger of Dawn",
+    "zh": "黎明神剑"
+  },
+  "12514": {
+    "en": "A Thousand Blazing Suns",
+    "zh": "焚曜千阳"
+  },
+  "11301": {
+    "en": "Cool Steel",
+    "zh": "冷刃"
+  },
+  "11422": {
+    "en": "Toukabou Shigure",
+    "zh": "东花坊时雨"
+  },
+  "12511": {
+    "en": "Beacon of the Reed Sea",
+    "zh": "苇海信标"
+  },
+  "11304": {
+    "en": "Dark Iron Sword",
+    "zh": "暗铁剑"
+  },
+  "11425": {
+    "en": "Finale of the Deep",
+    "zh": "海渊终曲"
+  },
+  "11303": {
+    "en": "Traveler's Handy Sword",
+    "zh": "旅行剑"
+  },
+  "12512": {
+    "en": "Verdict",
+    "zh": "裁断"
+  },
+  "11424": {
+    "en": "Wolf-Fang",
+    "zh": "狼牙"
+  },
+  "12407": {
+    "en": "Whiteblind",
+    "zh": "白影剑"
+  },
+  "12408": {
+    "en": "Blackcliff Slasher",
+    "zh": "黑岩斩刀"
+  },
+  "12405": {
+    "en": "Rainslasher",
+    "zh": "雨裁"
+  },
+  "12406": {
+    "en": "Prototype Archaic",
+    "zh": "试作古华"
+  },
+  "12409": {
+    "en": "Serpent Spine",
+    "zh": "螭骨剑"
+  },
+  "11430": {
+    "en": "Sturdy Bone",
+    "zh": "弥坚骨"
+  },
+  "11432": {
+    "en": "Calamity of Eshu",
+    "zh": "厄水之祸"
+  },
+  "11431": {
+    "en": "Flute of Ezpitzal",
+    "zh": "息燧之笛"
+  },
+  "11434": {
+    "en": "Moonweaver's Dawn",
+    "zh": "织月者的曙色"
+  },
+  "12403": {
+    "en": "Sacrificial Greatsword",
+    "zh": "祭礼大剑"
+  },
+  "12404": {
+    "en": "Royal Greatsword",
+    "zh": "宗室大剑"
+  },
+  "11433": {
+    "en": "Serenity's Call",
+    "zh": "谧音吹哨"
+  },
+  "12401": {
+    "en": "Favonius Greatsword",
+    "zh": "西风大剑"
+  },
+  "12402": {
+    "en": "The Bell",
+    "zh": "钟剑"
+  },
+  "15201": {
+    "en": "Seasoned Hunter's Bow",
+    "zh": "历练的猎弓"
+  },
+  "11405": {
+    "en": "Lion's Roar",
+    "zh": "匣里龙吟"
+  },
+  "11404": {
+    "en": "Royal Longsword",
+    "zh": "宗室长剑"
+  },
+  "11407": {
+    "en": "Iron Sting",
+    "zh": "铁蜂刺"
+  },
+  "11406": {
+    "en": "Prototype Rancour",
+    "zh": "试作斩岩"
+  },
+  "11409": {
+    "en": "The Black Sword",
+    "zh": "黑剑"
+  },
+  "11408": {
+    "en": "Blackcliff Longsword",
+    "zh": "黑岩长剑"
+  },
+  "11401": {
+    "en": "Favonius Sword",
+    "zh": "西风剑"
+  },
+  "11403": {
+    "en": "Sacrificial Sword",
+    "zh": "祭礼剑"
+  },
+  "11402": {
+    "en": "The Flute",
+    "zh": "笛剑"
+  },
+  "11416": {
+    "en": "Kagotsurube Isshin",
+    "zh": "笼钓瓶一心"
+  },
+  "11415": {
+    "en": "Cinnabar Spindle",
+    "zh": "辰砂之纺锤"
+  },
+  "12504": {
+    "en": "The Unforged",
+    "zh": "无工之剑"
+  },
+  "11418": {
+    "en": "Xiphos' Moonlight",
+    "zh": "西福斯的月光"
+  },
+  "11417": {
+    "en": "Sapwood Blade",
+    "zh": "原木刀"
+  },
+  "11419": {
+    "en": "Prized Isshin Blade",
+    "zh": "「一心传」名刀"
+  },
+  "11410": {
+    "en": "The Alley Flash",
+    "zh": "暗巷闪光"
+  },
+  "11412": {
+    "en": "Sword of Descension",
+    "zh": "降临之剑"
+  },
+  "12502": {
+    "en": "Wolf's Gravestone",
+    "zh": "狼的末路"
+  },
+  "12503": {
+    "en": "Song of Broken Pines",
+    "zh": "松籁响起之时"
+  },
+  "11414": {
+    "en": "Amenoma Kageuchi",
+    "zh": "天目影打刀"
+  },
+  "11413": {
+    "en": "Festering Desire",
+    "zh": "腐殖之剑"
+  },
+  "12501": {
+    "en": "Skyward Pride",
+    "zh": "天空之傲"
+  }
+}

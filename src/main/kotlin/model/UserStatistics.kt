@@ -1,6 +1,9 @@
-package template
+package model
 
-data class PlayerStats(
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class UserStatistics(
     val totalWishes: Int,
     val totalWishesLim: Int,
     val totalPrimo: Int,

@@ -59,7 +59,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\GenshinTracker\track
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build\libs\shortcut.ps1
 ```
 
-完成后，双击桌面的 **Genshin Analyzer** 快捷方式即可启动。若启动脚本旁存在 `app.ico`，快捷方式会使用该图标。
+完成后，双击桌面的 **Genshin Analyzer** 快捷方式即可启动。项目图标位于 `scripts/windows/app.jpg`，Gradle 构建时会将其复制到启动脚本旁。快捷方式脚本依次查找 `app.png`、`app.jpg`、`app.jpeg` 和 `app.ico`，并将 PNG/JPEG 转换为 Windows 使用的 `app.ico`。更新图标后需重新构建并运行快捷方式脚本。
+
+也可通过 `-IconPath "图标的完整路径.jpg"` 指定其他 PNG、JPEG 或 ICO 文件。生成的 ICO 保存在启动脚本旁，请保留该文件供快捷方式使用。
 
 两个脚本均支持 `-CheckOnly`：只检查配置，不启动程序，也不创建快捷方式。例如：
 
@@ -146,7 +148,9 @@ Run this from the project root:
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build\libs\shortcut.ps1
 ```
 
-Double-click the resulting **Genshin Analyzer** desktop shortcut to open the app. If `app.ico` exists beside the launcher, the shortcut uses it.
+Double-click the resulting **Genshin Analyzer** desktop shortcut to open the app. The project icon is stored at `scripts/windows/app.jpg`; Gradle copies it beside the launcher during the build. The shortcut script checks for `app.png`, `app.jpg`, `app.jpeg`, then `app.ico`, converting PNG/JPEG artwork to the Windows `app.ico` format. Rebuild and run the shortcut script again after updating the icon.
+
+Alternatively, supply `-IconPath "full path to your icon.jpg"` to select a PNG, JPEG or ICO file. The generated ICO stays beside the launcher and must remain there for the shortcut to use it.
 
 Both scripts accept `-CheckOnly` to validate configuration without launching the app or creating a shortcut:
 

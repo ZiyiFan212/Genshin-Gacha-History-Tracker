@@ -101,7 +101,15 @@ tasks.jar {
     exclude("META-INF/*.RSA")
 
     archiveFileName.set("Genshin-Analyzer-NEXT-${version}.jar")
-}
 
+    // Keep Windows launchers in source control and ship them beside the JAR.
+    inputs.dir("scripts/windows")
+    doLast {
+        copy {
+            from("scripts/windows")
+            into(destinationDirectory)
+        }
+    }
+}
 
 

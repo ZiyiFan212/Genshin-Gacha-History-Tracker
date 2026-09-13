@@ -181,22 +181,25 @@ Edit launcher sources in `scripts/windows`, then rebuild. `gradlew.bat clean` de
 
 ## 截图 / Screenshots
 
-将截图放入 `docs/images/`，然后取消下方对应图片行的 HTML 注释并修改文件名。尚未提供截图，因此暂不显示图片。
-
-Place screenshots in `docs/images/`, then remove the HTML comment markers around the relevant image lines below and adjust their filenames. Image slots remain empty until screenshots are supplied.
-
 ### 首页 / Home
 
-<!-- ![首页 / Home](docs/images/home.png) -->
+![首页：当前垫抽数与抽卡概览 / Home: current pity and wish overview](docs/images/home.png)
 
 ### 统计 / Statistics
 
-<!-- ![统计 / Statistics](docs/images/statistics.png) -->
+![统计：抽卡分析与出金历史 / Statistics: wish analysis and five-star history](docs/images/statistics.png)
 
-### 时间线与日历 / Timeline and calendar
+### 时间线 / Timeline
 
-<!-- ![时间线 / Timeline](docs/images/timeline.png) -->
-<!-- ![日历 / Calendar](docs/images/calendar.png) -->
+![时间线：按时间排列的抽卡记录 / Timeline: chronological wish records](docs/images/timeline.png)
+
+### 日历：月度概览 / Calendar: monthly overview
+
+![日历月视图：每日抽数与五星数量 / Monthly calendar: daily wishes and five-star counts](docs/images/calendar-month.png)
+
+### 日历：每日详情 / Calendar: daily details
+
+![日历日详情：抽数、原石与获得的物品 / Daily details: wishes, primogems, and obtained items](docs/images/calendar-day.png)
 
 ## 数据位置 / Data locations
 
@@ -230,6 +233,7 @@ src/main/resources/gacha-assets/
 src/test/kotlin/
 proxy/           # 代理服务闲逛 / Node.js proxy
 scripts/windows/ # 启动脚本源文件 / Launcher sources
+docs/images/     # README 截图 / README screenshots
 build/libs/      # 生成的 JAR 与脚本 / Generated JAR and launchers
 ```
 
@@ -245,6 +249,6 @@ The app provides **UIGF v3.0 / v4.0** export options, but interoperability with 
 
 ## 许可证 / License
 
-本项目采用 **MIT 许可证**。
+本项目采用 [MIT 许可证](LICENSE)。
 
-This project is licensed under the **MIT License**.
+This project is licensed under the [MIT License](LICENSE).

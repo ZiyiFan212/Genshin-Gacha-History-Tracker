@@ -43,7 +43,7 @@
     "phase_fetching": "已捕获密钥，正在拉取…"
   },
   "import": {
-    "description": "允许导入 UIGF v3/v4.1 JSON 文件，将与本地数据自动合并。",
+    "description": "允许导入包含单个原神账号的 UIGF v3.0/v4.1 JSON 文件，将与本地数据自动合并。",
     "select_file": "选择 JSON 文件",
     "steps_title": "导入向导",
     "step1": "从第三方工具导出抽卡记录（任意 UIGF 格式）",
@@ -127,7 +127,7 @@
     "description": "导出抽卡数据。",
     "no_data": "暂无数据，请先导入记录。",
     "uigf_v3": "UIGF v3.0",
-    "uigf_v4": "UIGF v4.0",
+    "uigf_v4": "UIGF v4.1",
     "excel": "Excel",
     "csv": "CSV",
     "html": "HTML报告",

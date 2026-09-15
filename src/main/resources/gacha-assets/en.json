@@ -43,7 +43,7 @@
     "phase_fetching": "Authkey captured — fetching wish records…"
   },
   "import": {
-    "description": "Import a UIGF v3/v4 JSON file. Existing records will be merged automatically.",
+    "description": "Import a UIGF v3.0/v4.1 JSON file containing one Genshin Impact account. Existing records will be merged automatically.",
     "select_file": "Select JSON File",
     "steps_title": "Import Wizard",
     "step1": "Export gacha history from your tool (UIGF format)",
@@ -127,7 +127,7 @@
     "description": "Export your gacha data in various formats.",
     "no_data": "No data to export. Import records first.",
     "uigf_v3": "Export UIGF v3.0",
-    "uigf_v4": "Export UIGF v4.0",
+    "uigf_v4": "Export UIGF v4.1",
     "excel": "Export Excel",
     "csv": "Export CSV",
     "html": "Export HTML Report",

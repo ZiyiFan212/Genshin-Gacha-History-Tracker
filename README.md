@@ -1,6 +1,6 @@
 # Genshin-Analyzer-NEXT · 原神抽卡助手
 
-[中文](#中文介绍) | [English](#english-introduction) | [截图 / Screenshots](#screenshots)
+[中文](#中文介绍) | [English](#English) | [截图 / Screenshots](#screenshots)
 
 ## 中文介绍
 
@@ -92,7 +92,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build\libs\shortcut.ps
 
 修改启动脚本时，请编辑 `scripts/windows` 中的源文件并重新构建。`gradlew.bat clean` 会删除 `build` 中生成的 JAR、脚本和启动日志。
 
-## English introduction
+## English 
 
 Genshin-Analyzer-NEXT is a personal desktop project designed and developed by the author (A student in UWaterloo ECE 31', also a gacha gamer). It began as a way to organize personal wish records and brings collection, importing, storage, analytics, and exporting into one app. It helps users revisit their wish history, check current pity, and explore results across banners.
 

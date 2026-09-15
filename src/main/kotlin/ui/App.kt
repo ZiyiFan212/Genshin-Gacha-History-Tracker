@@ -172,7 +172,7 @@ fun FrameWindowScope.App(viewModel: AppViewModel,
                             AppScreen.EXPORT -> ExportScreen(
                                 hasData = state.records.isNotEmpty(),
                                 onExportUigfV3 = { viewModel.exportUIGF("v3.0") },
-                                onExportUigfV4 = { viewModel.exportUIGF("v4.0") },
+                                onExportUigfV4 = { viewModel.exportUIGF("v4.1") },
                                 onExportExcel = viewModel::exportExcel,
                                 onExportCsv = viewModel::exportCsv,
                                 onExportHtml = viewModel::exportHtml,

@@ -1,17 +1,13 @@
 import assets.ItemTranslator
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class PrintID2Name {
 
     @Test
     fun check() {
-        run {
-            ItemTranslator.load()
-        }.onFailure {
-            println("failed to initialize: $it")
-        }
-
-        val map = ItemTranslator.returnMap()
-        map.forEach { string, string1 ->  println("key: $string, value: $string1")}
+        ItemTranslator.load().getOrThrow()
+        assertEquals("14401", ItemTranslator.getIdByName("西风秘典"))
+        assertEquals("14401", ItemTranslator.getIdByName("Favonius Codex"))
     }
 }

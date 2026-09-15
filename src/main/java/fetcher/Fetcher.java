@@ -200,7 +200,8 @@ public class Fetcher implements AutoCloseable {
                             item.get("item_type").asText(),
                             item.get("item_id").asText(),
                             item.get("id").asText(),
-                            item.get("rank_type").asInt()
+                            item.get("rank_type").asInt(),
+                            "400".equals(item.get("gacha_type").asText()) ? "301" : item.get("gacha_type").asText()
                     );
                     pageRecords.add(rd);
                 }

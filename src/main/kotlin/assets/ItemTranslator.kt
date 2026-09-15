@@ -58,6 +58,13 @@ object ItemTranslator {
         return nameToIdMap[name] ?: ""
     }
 
+    /** Resolve export names without changing the user's interface language. */
+    fun getExportName(id: String, language: String): String? {
+        if (!initialized) load().getOrThrow()
+        val name = itemTranslationMap[id] ?: return null
+        return if (language == "zh-cn") name.zh else name.en
+    }
+
     // just for testing
     /*
     fun returnMap(): Map<String, String> {

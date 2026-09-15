@@ -16,7 +16,7 @@ windows 10+的环境。
 - **多账号管理**：按 UID 存储记录，并在界面中切换账号。
 - **抽卡统计**：查看总抽数、五星与四星数量、平均出金抽数、当前垫抽数等。
 - **可视化**：通过时间线、日历、出金历史图表和月度原石消耗统计回顾记录。
-- **数据导出**：提供 JSON（界面标注为 UIGF v3.0/v4.0）、Excel、CSV 和 HTML 导出选项。尚未验证与其他社区工具的互操作性；版本说明见文末。
+- **数据导出**：提供 JSON（UIGF v3.0/v4.1）、Excel、CSV 和 HTML 导出选项。尚未验证与其他社区工具的互操作性；版本说明见文末。
 - **本地存储与备份**：使用 SQLite 保存数据；导入或采集前备份已有数据库。
 
 ### Windows 环境准备
@@ -104,7 +104,7 @@ The interface uses Kotlin and Compose Desktop, with Java, SQLite, and a Node.js 
 - **Multiple accounts:** store records by UID and switch accounts in the interface.
 - **Wish statistics:** view wish totals, five-star and four-star counts, average pulls to a five-star, current pity, win rates, and win/loss streaks. Character event banners 301 and 400 share pity and guarantee state.
 - **History views:** explore a timeline, calendar, five-star history charts, and monthly primogem consumption statistics.
-- **Exports:** JSON (labeled UIGF v3/v4 in the interface), Excel, CSV, and HTML options. Interoperability with other community tools has not been verified; see the version notes below.
+- **Exports:** JSON (UIGF v3.0/v4.1), Excel, CSV, and HTML options. Interoperability with other community tools has not been verified; see the version notes below.
 - **Local storage and backups:** save records in SQLite and back up an existing database before importing or capturing records.
 - **Appearance and language:** Chinese and English interfaces, with light, dark, and system theme settings.
 
@@ -247,9 +247,9 @@ build/libs/      # 生成的 JAR 与脚本 / Generated JAR and launchers
 
 This is the project's first official release. No release or download URL is available yet; use the source build instructions above.
 
-程序提供 **UIGF v3.0 / v4.0** 格式的导出选项，但尚未与其他社区工具验证互操作性。
+程序提供 **UIGF v3.0 / v4.1** 格式的导出选项，支持导入包含单个原神账号的文件。包含多个账号的 v4.1 文件需要按 UID 分开导入。尚未与其他社区工具验证互操作性。
 
-The app provides **UIGF v3.0 / v4.0** export options, but interoperability with other community tools has not been verified.
+The app provides **UIGF v3.0 / v4.1** export options and imports files containing one Genshin Impact account. Multi-account v4.1 files must be separated by UID before importing. Interoperability with other community tools has not been verified.
 
 ## 许可证 / License
 

@@ -2,6 +2,8 @@ package model
 
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.jsonObject
 
 @Serializable
 data class GachaRecord(
@@ -11,7 +13,8 @@ data class GachaRecord(
     @SerialName("item_type") val itemType: String,
     @SerialName("item_id") val itemID: String,
     @SerialName("id") val recordID: String,
-    @SerialName("rank_type") val rankType: Int
+    @SerialName("rank_type") val rankType: Int,
+    @SerialName("uigf_gacha_type") val uigfGachaType: String = if (gachaType == "400") "301" else gachaType,
 )
 
 @Serializable
@@ -31,14 +34,29 @@ val customizeJson = Json {
     coerceInputValues = true
 }
 
+@Serializable
+private data class UigfV41pair(val uid: String, val list: List<GachaRecord>)
+
+@Serializable
+private data class UigfV41Archive(val hk4e: List<UigfV41pair>)
+
 fun parseJson(jsonString: String): Result<Pair<String, List<GachaRecord>>> = runCatching {
-    val wrapper = customizeJson.decodeFromString<UIGFWrapper>(jsonString)
-    val rawRecords = wrapper.list.ifEmpty { wrapper.records }
+    val root = customizeJson.parseToJsonElement(jsonString).jsonObject
+    val (uid, rawRecords) = if ("hk4e" in root) {
+        val archive = customizeJson.decodeFromJsonElement<UigfV41Archive>(root)
+        require(archive.hk4e.size == 1) {
+            "Import requires exactly one Genshin Impact account; export each UID separately."
+        }
+        archive.hk4e.single().let { it.uid to it.list }
+    } else {
+        val wrapper = customizeJson.decodeFromJsonElement<UIGFWrapper>(root)
+        wrapper.info.uid to wrapper.list.ifEmpty { wrapper.records }
+    }
     require(rawRecords.isNotEmpty()) { "UIGF file contains no gacha records" }
     val sanitizedData = rawRecords.map { record ->
         record.copy(itemType = record.sanitizeItemName())
     }
-    Pair(wrapper.info.uid, sanitizedData)
+    Pair(uid, sanitizedData)
 }
 
 fun GachaRecord.sanitizeItemName(): String {

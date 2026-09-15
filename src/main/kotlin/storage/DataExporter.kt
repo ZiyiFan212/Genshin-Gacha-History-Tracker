@@ -5,6 +5,7 @@ import assets.ItemTranslator
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
@@ -13,6 +14,8 @@ import model.sortedChronologicallyDescending
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 sealed interface GachaExporter {
     fun export(records: List<GachaRecord>, uid: String, path: Path = IOConfiguration.default_ExportPath, ignoreThreeStar: Boolean = false): Result<Path>
@@ -196,49 +199,159 @@ object HtmlExporter : GachaExporter {
 
 object UigfExporter : GachaExporter {
 
-    override val fileExtension: String = "json"
+    private val json = Json {
+        prettyPrint = true; encodeDefaults = true
+    }
+    override val fileExtension: String = ".json"
 
     @Serializable
-    data class UIGFExportInfo(
+    private data class UigfV3Info(
         val uid: String,
-        val lang: String = "en",
+        val lang: String = "en-us",
+        @SerialName("export_time") val exportTime: String =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneOffset.UTC).format(Instant.now()),
         @SerialName("export_timestamp") val exportTimestamp: Long = Instant.now().epochSecond,
         @SerialName("export_app") val exportApp: String = "Genshin-Analyzer-NEXT",
-        @SerialName("export_app_version") val exportAppVersion: String = "v2.0",
-        @SerialName("uigf_version") val uigfVersion: String
+        @SerialName("export_app_version") val exportAppVersion: String = "v0.1",
+        @SerialName("uigf_version") val uigfVersion: String,
+        @SerialName("region_time_zone") val timeZone: Int = serverTimeZone(uid)
     )
 
-    private val json = Json { prettyPrint = true }
+    @Serializable
+    private data class UigfV3Record(
+        @SerialName("gacha_type") val gachaType: String,
+        val time: String,
+        val name: String,
+        @SerialName("item_type") val itemType: String,
+        @SerialName("item_id") val itemId: String,
+        @SerialName("rank_type") val rankType: String,
+        val id: String,
+        @SerialName("uigf_gacha_type") val uigfGachaType: String,
+    )
 
-    override fun export(records: List<GachaRecord>, uid: String, path: Path, ignoreThreeStar: Boolean): Result<Path> =
-        export(uid to records, "v4.0", path)
+    @Serializable
+    private data class UigfV41Info(
+        @SerialName("export_timestamp") val exportTimestamp: Long = Instant.now().epochSecond,
+        @SerialName("export_app") val exportApp: String = "Genshin-Analyzer-NEXT",
+        @SerialName("export_app_version") val exportAppVersion: String = "v0.1",
+        @SerialName("version") val UigfVersion: String = "v4.1",
+    )
+
+    @Serializable
+    private data class UigfV41Hk4e(
+        val uid: String,
+        @SerialName("timezone") val timeZone: Int,
+        @SerialName("lang") val language: String,
+        val list: List<UigfV41Record>
+    )
+
+    @Serializable
+    private data class UigfV41Record(
+        @SerialName("uigf_gacha_type") val uigfGachaType: String,
+        @SerialName("gacha_type") val gachaType: String,
+        @SerialName("item_id") val itemId: String,
+        val time: String,
+        val name: String,
+        @SerialName("item_type") val itemType: String,
+        @SerialName("rank_type") val rankType: String,
+        val id: String,
+    )
+
+    override fun export(records: List<GachaRecord>, uid: String, path: Path,
+                        ignoreThreeStar: Boolean): Result<Path> = export(uid to records,"v3.0", path)
 
     fun export(
         pair: Pair<String, List<GachaRecord>>,
         version: String,
-        path: Path = IOConfiguration.default_ExportPath
+        path: Path = IOConfiguration.default_ExportPath,
+        language: String = if (I18nManager.currentLocale == "zh") "zh-cn" else "en-us",
+        regionTimeZone: Int = serverTimeZone(pair.first),
     ): Result<Path> = runCatching {
-        require(version == "v3.0" || version == "v4.0") { "Unsupported UIGF version: $version" }
-        require(pair.second.isNotEmpty()) { "Cannot export empty gacha records" }
 
-        val infoObj = json.encodeToJsonElement(UIGFExportInfo(uid = pair.first, uigfVersion = version))
-        val recordsArr = json.encodeToJsonElement(pair.second)
-        val key = if (version == "v3.0") "list" else "records"
-        val finalJsonMap = buildJsonObject {
-            put("info", infoObj)
-            put(key, recordsArr)
+        require(version == "v3.0" || version == "v4.1") { "Unsupported UIGF version: $version" }
+        require(pair.second.isNotEmpty()) { "Cannot export empty gacha records" }
+        require(language in setOf("zh-cn", "en-us")) { "Unsupported export language: $language" }
+        require(regionTimeZone in -12..14) { "Invalid server timezone: $regionTimeZone" }
+
+        val exportedAt = Instant.now()
+        val finalJsonMap: JsonObject = if (version == "v3.0") {
+            val v3infoObj = json.encodeToJsonElement(UigfV3Info(
+                uid = pair.first,
+                lang = language,
+                exportTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                    .withZone(ZoneOffset.ofHours(regionTimeZone)).format(exportedAt),
+                exportTimestamp = exportedAt.epochSecond,
+                uigfVersion = version,
+                timeZone = regionTimeZone
+            ))
+            val v3recordObj = json.encodeToJsonElement(pair.second.map { record ->
+                    UigfV3Record(
+                        gachaType = record.gachaType,
+                        time = record.time,
+                        name = ItemTranslator.getExportName(record.itemID, language) ?: record.name,
+                        itemType = typeNameSanitizer(record.itemType, language),
+                        itemId = record.itemID,
+                        rankType = record.rankType.toString(),
+                        id = record.recordID,
+                        uigfGachaType = if (record.gachaType == "400") "301" else record.gachaType,
+                    )
+                })
+
+            buildJsonObject {
+                put("info", v3infoObj)
+                put("list", v3recordObj)
+            }
+        } else {
+            val v41InfoObj = json.encodeToJsonElement(UigfV41Info(exportTimestamp = exportedAt.epochSecond))
+            val v41List = pair.second.map {
+                record -> UigfV41Record(
+                uigfGachaType = if (record.gachaType == "400") "301" else record.gachaType,
+                gachaType = record.gachaType,
+                time = record.time,
+                name = ItemTranslator.getExportName(record.itemID, language) ?: record.name,
+                itemType = typeNameSanitizer(record.itemType, language),
+                itemId = record.itemID,
+                rankType = record.rankType.toString(),
+                id = record.recordID
+            )
+
+            }
+            val v41Hk4eObj = json.encodeToJsonElement(UigfV41Hk4e(
+                uid = pair.first, timeZone = regionTimeZone, language = language, list = v41List
+            ))
+            buildJsonObject {
+                put("info", v41InfoObj)
+                put("hk4e", JsonArray(listOf(v41Hk4eObj)))
+            }
         }
 
         val jsonStr = json.encodeToString(JsonObject.serializer(), finalJsonMap)
-        val outputFile = resolveExportFile(path, pair.first)
-        Files.createDirectories(outputFile.parent)
+        val outputFile = resolveExportFile(path, pair.first, version)
+        outputFile.toAbsolutePath().parent?.let(Files::createDirectories)
         outputFile.toFile().writeText(jsonStr)
         outputFile
     }
 
-    private fun resolveExportFile(path: Path, uid: String): Path {
+
+    // UIGF v3 fallback when no explicit server timezone is available!!
+    private fun serverTimeZone(uid: String): Int  {
+        return when (uid.firstOrNull()) {
+            '6' -> -5
+            '7' -> 1
+            else -> 8
+        }
+    }
+
+    private fun typeNameSanitizer(input: String, lang: String): String =
+        when (input.lowercase()) {
+            "角色", "character" -> if (lang == "zh-cn") "角色" else "Character"
+            "武器", "weapon" -> if (lang == "zh-cn") "武器" else "Weapon"
+            else -> input
+        }
+
+    private fun resolveExportFile(path: Path, uid: String, version: String): Path {
         return if (Files.isDirectory(path)) {
-            val fileName = "UIGF_${uid}_${Instant.now().epochSecond}.json"
+            val fileName = "UIGF_${version}_${uid}_${DateTimeFormatter.ofPattern("yyyyMMddHHmm").withZone(ZoneOffset.UTC).format(Instant.now())}${fileExtension}"
             path.resolve(fileName)
         } else {
             path

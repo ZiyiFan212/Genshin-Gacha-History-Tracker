@@ -44,6 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import utilities.AppConstants
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val MAX_PITY_SCALE = 90
 private const val BAR_TRACK_WIDTH = 320
@@ -126,7 +127,7 @@ private fun CurrentPityRow(
     }
 
     LaunchedEffect(animationKey, index) {
-        kotlinx.coroutines.delay((index * 50).toLong())
+        kotlinx.coroutines.delay((index * 50).toLong().milliseconds)
         animationStarted = true
     }
 

@@ -6,9 +6,7 @@ import core.ProxyExceptionType
 import core.GachaServerConnectionException
 import core.InvalidAuthkeyUrlException
 import core.ProxyException
-import utilities.LogBody
-import utilities.LogLevel
-import utilities.LogWriter
+
 
 fun ProxyExceptionType.userMessage(): String = I18nManager[i18nKey()]
 

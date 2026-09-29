@@ -2,7 +2,6 @@ package assets
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import utilities.AppLogger
 import java.time.Instant
 
 object UpTimeLoader {

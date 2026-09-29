@@ -1,6 +1,8 @@
-﻿package backup
+package backup
 
-import utilities.AppLogger
+import utilities.LogBody
+import utilities.LogLevel
+import utilities.LogWriter
 import storage.IOConfiguration
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -14,13 +16,13 @@ object BackupManager {
     fun backupBeforeImport(): Result<java.nio.file.Path> = runCatching {
         val db = IOConfiguration.default_databasePath
         if (!Files.exists(db)) {
-            AppLogger.info("No database to backup yet")
+            LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "No database to backup yet"))
             return@runCatching db
         }
         Files.createDirectories(backupDir)
         val target = backupDir.resolve("gacha_${Instant.now().epochSecond}.db")
         Files.copy(db, target, StandardCopyOption.REPLACE_EXISTING)
-        AppLogger.info("Database backed up to $target")
+        LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "Database backed up to $target"))
         target
     }
 
@@ -33,7 +35,7 @@ object BackupManager {
     fun restoreBackup(backupPath: java.nio.file.Path): Result<Unit> = runCatching {
         require(Files.exists(backupPath)) { "Backup not found: $backupPath" }
         Files.copy(backupPath, Configuration.default_databasePath, StandardCopyOption.REPLACE_EXISTING)
-        AppLogger.info("Database restored from $backupPath")
+        LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "Database restored from $backupPath"))
     }
     */
 }

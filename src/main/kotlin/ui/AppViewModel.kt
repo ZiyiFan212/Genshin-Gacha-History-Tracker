@@ -33,7 +33,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import utilities.AppLogger
+import utilities.LogBody
+import utilities.LogLevel
+import utilities.LogWriter
 import excelWriter.ExcelWriter
 import storage.AppDatabase
 import model.GachaRecord
@@ -123,7 +125,7 @@ class AppViewModel {
             )
             analyticsCache = cache
             analyticsCacheUid = uid
-            AppLogger.info("Analytics cache computed for uid=$uid")
+            LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "Analytics cache computed for uid=$uid"))
             return cache
         }
     }
@@ -154,9 +156,9 @@ class AppViewModel {
                     )
                 }
                 refreshUidList()
-                AppLogger.info("Application initialized")
+                LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "Application initialized"))
             }.onFailure { e ->
-                AppLogger.error("Initialization failed", e)
+                LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Initialization failed", e))
                 UiState.update { it.copy(isLoading = false, error = e.message ?: "Init failed") }
             }
         }
@@ -214,7 +216,7 @@ class AppViewModel {
                         selectUid(uid)
                     }
                 }.onFailure { e ->
-                    AppLogger.error("Import failed", e)
+                    LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Import failed", e))
                     UiState.update { it.copy(isLoading = false, error = e.message ?: "Import failed") }
                 }
             }
@@ -264,7 +266,7 @@ class AppViewModel {
                             navigate(AppScreen.TIMELINE)
                         }
                     }.onFailure { e ->
-                        AppLogger.error("Proxy capture failed", e)
+                        LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Proxy capture failed", e))
                         UiState.update { it.copy(error = e.safeUserMessage()) }
                     }
                 }
@@ -282,10 +284,10 @@ class AppViewModel {
             UigfExporter.export(uid to records, version)
                 .onSuccess { path ->
                     UiState.update { it.copy(message = I18nManager["message.export_success"] + " → $path") }
-                    AppLogger.info("UIGF export: ignoreThreeStar is always false for UIGF format, exported to $path")
+                    LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "UIGF export: ignoreThreeStar is always false for UIGF format, exported to $path"))
                 }
                 .onFailure { e ->
-                    AppLogger.error("UIGF export failed", e)
+                    LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "UIGF export failed", e))
                     UiState.update { it.copy(error = e.message) }
                 }
         }
@@ -299,9 +301,9 @@ class AppViewModel {
                 ExcelWriter.exportExcel(mapOf(uid to records))
             }.onSuccess {
                 UiState.update { it.copy(message = I18nManager["message.export_success"]) }
-                AppLogger.info("Excel exported for uid=$uid")
+                LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "Excel exported for uid=$uid"))
             }.onFailure { e ->
-                AppLogger.error("Excel export failed", e)
+                LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Excel export failed", e))
                 UiState.update { it.copy(error = e.message) }
             }
         }
@@ -356,7 +358,7 @@ class AppViewModel {
 
     // database disconnected & all coroutines canceled
     fun shutdown() {
-        AppLogger.info("Application shutting down: disconnecting the database and cancelling all running coroutines.")
+        LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "Application shutting down: disconnecting the database and cancelling all running coroutines."))
         AppDatabase.dbClose()
         scope.cancel()
     }
@@ -405,7 +407,7 @@ class AppViewModel {
                 }
                 invalidateAnalyticsCache()
             }.onFailure { e ->
-                AppLogger.error("Failed to load uid=$uid", e)
+                LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Failed to load uid=$uid", e))
                 UiState.update { it.copy(isLoading = false, error = e.message) }
             }
         }
@@ -422,7 +424,7 @@ class AppViewModel {
                     AppDatabase.updateCurrentUser(uid, newStats)
                     UiState.update { it.copy(stats = newStats) }
                 }.onFailure { e ->
-                    AppLogger.error("Failed to update stats for uid=$uid", e)
+                    LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Failed to update stats for uid=$uid", e))
                 }
             }
         }
@@ -443,7 +445,7 @@ class AppViewModel {
                     UiState.update { it.copy(records = updated) }
                     invalidateAnalyticsCache()
                 }.onFailure { e ->
-                    AppLogger.error("Failed to update records for uid=$uid", e)
+                    LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Failed to update records for uid=$uid", e))
                 }
             }
         }

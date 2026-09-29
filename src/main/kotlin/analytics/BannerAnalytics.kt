@@ -6,7 +6,6 @@ import model.sortedChronologically
 import utilities.AppConstants
 import utilities.AppConstants.GuaranteeType
 import utilities.AppConstants.StandardItemUID
-import utilities.AppLogger
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 

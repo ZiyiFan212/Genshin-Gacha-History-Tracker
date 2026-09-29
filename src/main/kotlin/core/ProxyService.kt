@@ -4,15 +4,14 @@ import assets.ItemTranslator
 import fetcher.Fetcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import utilities.AppLogger
+import utilities.LogBody
+import utilities.LogLevel
+import utilities.LogWriter
 import model.GachaRecord
 import model.sanitizeItemName
 import storage.AppDatabase
-import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
-import java.io.InputStreamReader
-import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 
 enum class CapturePhase {
@@ -95,7 +94,7 @@ class ProxyService {
 
                 if (proxyProcess.exitValue() != 0) {
                     val exitCode = proxyProcess.exitValue()
-                    AppLogger.error("Proxy script exited with code $exitCode")
+                    LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Proxy script exited with code $exitCode"))
                     val error = when (exitCode) {
                         PROXY_EXIT_TIMEOUT -> ProxyExceptionType.TIMEOUT
                         PROXY_EXIT_DELIVERY_FAILED -> ProxyExceptionType.AUTHKEY_DELIVERY_FAILED
@@ -145,7 +144,7 @@ class ProxyService {
                 Thread.currentThread().interrupt()
                 Result.failure(ProxyException(ProxyExceptionType.OPERATION_CANCELLED, cause = e))
             } catch (e: Exception) {
-                AppLogger.error("Unexpected capture error", e)
+                LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Unexpected capture error", e))
                 Result.failure(ProxyException(ProxyExceptionType.FETCH_FAILED, cause = e))
             } finally {
                 fetcher?.close()
@@ -206,25 +205,25 @@ class ProxyService {
                 val completed = scriptProcess.waitFor(5, TimeUnit.SECONDS)
                 if (!completed) {
                     scriptProcess.destroyForcibly()
-                    AppLogger.warn("System proxy cleanup process timed out, trying cleanup script")
+                    LogWriter.instance.tryLog(LogBody(LogLevel.WARN, "System proxy cleanup process timed out, trying cleanup script"))
                     runCleanupScript(cleanupScript)
                 } else if (scriptProcess.exitValue() != 0) {
-                    AppLogger.warn("System proxy cleanup script failed with exit code ${scriptProcess.exitValue()}, trying cleanup script")
+                    LogWriter.instance.tryLog(LogBody(LogLevel.WARN, "System proxy cleanup script failed with exit code ${scriptProcess.exitValue()}, trying cleanup script"))
                     runCleanupScript(cleanupScript)
                 }
             } else {
-                AppLogger.warn("systemProxy.js not found, using cleanup script directly")
+                LogWriter.instance.tryLog(LogBody(LogLevel.WARN, "systemProxy.js not found, using cleanup script directly"))
                 runCleanupScript(cleanupScript)
             }
         } catch (e: Exception) {
-            AppLogger.error("Failed to cleanup proxy via system script", e)
+            LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Failed to cleanup proxy via system script", e))
             runCleanupScript(cleanupScript)
         }
     }
 
     private fun runCleanupScript(cleanupScript: File) {
         if (!cleanupScript.isFile) {
-            AppLogger.error("Cleanup script not found: ${cleanupScript.absolutePath}")
+            LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Cleanup script not found: ${cleanupScript.absolutePath}"))
             return
         }
         
@@ -237,12 +236,12 @@ class ProxyService {
             val completed = process.waitFor(5, TimeUnit.SECONDS)
             if (!completed) {
                 process.destroyForcibly()
-                AppLogger.warn("Cleanup script timed out")
+                LogWriter.instance.tryLog(LogBody(LogLevel.WARN, "Cleanup script timed out"))
             } else if (process.exitValue() != 0) {
-                AppLogger.warn("Cleanup script failed with exit code ${process.exitValue()}")
+                LogWriter.instance.tryLog(LogBody(LogLevel.WARN, "Cleanup script failed with exit code ${process.exitValue()}"))
             }
         } catch (e: Exception) {
-            AppLogger.error("Failed to run cleanup script", e)
+            LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Failed to run cleanup script", e))
         }
     }
 

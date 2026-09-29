@@ -6,7 +6,9 @@ import core.ProxyExceptionType
 import core.GachaServerConnectionException
 import core.InvalidAuthkeyUrlException
 import core.ProxyException
-import utilities.AppLogger
+import utilities.LogBody
+import utilities.LogLevel
+import utilities.LogWriter
 
 fun ProxyExceptionType.userMessage(): String = I18nManager[i18nKey()]
 
@@ -37,7 +39,7 @@ fun Throwable.toUserMessage(): String {
 fun Throwable.safeUserMessage(): String = try {
     toUserMessage()
 } catch (e: Exception) {
-    AppLogger.error("Failed to format user-facing error message", e)
+    LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Failed to format user-facing error message", e))
     I18nManager["error.capture_failed"]
 }
 

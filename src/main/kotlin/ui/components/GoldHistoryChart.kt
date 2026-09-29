@@ -44,7 +44,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import utilities.AppConstants
-import utilities.AppLogger
 
 private const val MAX_PITY_SCALE = 90
 private const val BAR_TRACK_WIDTH = 320

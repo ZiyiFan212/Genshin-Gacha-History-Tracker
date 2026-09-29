@@ -7,7 +7,9 @@ import model.sortedChronologically
 import utilities.AppConstants
 import utilities.AppConstants.StandardItemUID
 import utilities.AppConstants.Result
-import utilities.AppLogger
+import utilities.LogBody
+import utilities.LogLevel
+import utilities.LogWriter
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -104,7 +106,7 @@ fun List<GachaRecord>.upRatioCalculator(bannerPool: Set<String> = setOf(AppConst
     AppConstants.CHARACTER_EVENT_BANNER2, AppConstants.WEAPON_EVENT_BANNER)): Pair<Double, Double> {
 
     UpTimeLoader.load().onFailure {
-        AppLogger.warn("Failed to load h up-time map for all items!")
+        LogWriter.instance.tryLog(LogBody(LogLevel.WARN, "Failed to load h up-time map for all items!"))
         return Pair(Double.NaN, Double.NaN) // check by caller (forced)
     }
 

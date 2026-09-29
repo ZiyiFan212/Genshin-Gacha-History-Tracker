@@ -7,9 +7,11 @@ import core.TooFrequentRequestException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
-import utilities.AppLogger;
+import utilities.LogBody;
 import model.GachaRecord;
 import utilities.AppConstants;
+import utilities.LogLevel;
+import utilities.LogWriter;
 
 import java.io.IOException;
 import java.net.URI;
@@ -20,6 +22,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.InvalidPropertiesFormatException;
 import java.util.List;
@@ -138,7 +141,7 @@ public class Fetcher implements AutoCloseable {
                     } else {
                         urlBuilder.append("&end_id=0");
                     }
-                    AppLogger.INSTANCE.debug("uri: " + urlBuilder.substring(0, 20));
+                    LogWriter.Companion.getInstance().tryLog(new LogBody(LogLevel.INFO, urlBuilder.substring(0, 20), null, LocalDateTime.now()));
 
                     HttpRequest request = HttpRequest.newBuilder()
                             .uri(URI.create(urlBuilder.toString()))
@@ -146,9 +149,7 @@ public class Fetcher implements AutoCloseable {
                             .header("Referer", "https://webstatic.mihoyo.com/")
                             .GET()
                             .build();
-
                     HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-                    AppLogger.INSTANCE.debug("status code: " + response.statusCode() + "\n" + response.body().substring(0, 20));
 
                     if (response.statusCode() != 200) {
                         throw new GachaServerConnectionException(
@@ -160,7 +161,7 @@ public class Fetcher implements AutoCloseable {
                     JsonNode retCodeNode = jsonNode.get("retcode");
                     if (retCodeNode != null && retCodeNode.asInt() != 0) {
                         String message = jsonNode.has("message") ? jsonNode.get("message").asText() : "Unknown error";
-                        AppLogger.INSTANCE.debug(message);
+
                         int retcode = retCodeNode.asInt();
                         if ("authkey timeout".equalsIgnoreCase(message) || "authkey error".equalsIgnoreCase(message)) {
                             throw new AuthkeyExpiredException(
@@ -177,7 +178,7 @@ public class Fetcher implements AutoCloseable {
 
                 } catch (TooFrequentRequestException e) {
                     retries++;
-                    AppLogger.INSTANCE.warn("Too frequent request, retrying " + retries + "/" + MAX_RETRIES + "...");
+                    LogWriter.Companion.getInstance().tryLog(new LogBody(LogLevel.WARN, "Too frequent retry!", null, LocalDateTime.now()));
                     Thread.sleep(TOO_FREQUENT_DELAY_MS * retries);
                     if (retries >= MAX_RETRIES) {
                         client.close();
@@ -207,16 +208,13 @@ public class Fetcher implements AutoCloseable {
                 }
             }
 
-            if (pageRecords.isEmpty()) {
-                AppLogger.INSTANCE.debug("No more records for banner: " + bannerType);
-                break;
-            }
+            if (pageRecords.isEmpty()) break;
 
             currentBannerRecords.addAll(pageRecords);
             endID = pageRecords.getLast().getRecordID();
             Thread.sleep(Base_Delay + rand.nextInt(500, 1500));
         }
-        AppLogger.INSTANCE.debug("Fetch record number: " + currentBannerRecords.size());
+        LogWriter.Companion.getInstance().tryLog(new LogBody(LogLevel.INFO, "Numbers of record fetched: " + currentBannerRecords.size(), null, LocalDateTime.now()));
         return currentBannerRecords;
     }
 

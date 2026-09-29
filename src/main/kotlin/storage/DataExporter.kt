@@ -204,6 +204,8 @@ object UigfExporter : GachaExporter {
     }
     override val fileExtension: String = ".json"
 
+    // UIGF v3 info data class for serialization, follow the standard format.
+    // see: https://uigf.org/en/standards/uigf-legacy-v3.0.html
     @Serializable
     private data class UigfV3Info(
         val uid: String,
@@ -229,6 +231,10 @@ object UigfExporter : GachaExporter {
         @SerialName("uigf_gacha_type") val uigfGachaType: String,
     )
 
+    // UIGF v4.1 info data class for serialization, follow the standard format.
+    // see: https://uigf.org/en/standards/uigf-legacy-v4.1.html
+    // note: To be compatible and univerisal for all myhoyo-game, since UIGF v4.1,
+    // game code is added (e.g Genshin Impact - hk4e), and records are printed as array.
     @Serializable
     private data class UigfV41Info(
         @SerialName("export_timestamp") val exportTimestamp: Long = Instant.now().epochSecond,
@@ -342,6 +348,7 @@ object UigfExporter : GachaExporter {
         }
     }
 
+    // sanitize the name based on the user's current language choice.
     private fun typeNameSanitizer(input: String, lang: String): String =
         when (input.lowercase()) {
             "角色", "character" -> if (lang == "zh-cn") "角色" else "Character"

@@ -52,13 +52,16 @@ fun parseJson(jsonString: String): Result<Pair<String, List<GachaRecord>>> = run
         val wrapper = customizeJson.decodeFromJsonElement<UIGFWrapper>(root)
         wrapper.info.uid to wrapper.list.ifEmpty { wrapper.records }
     }
-    require(rawRecords.isNotEmpty()) { "UIGF file contains no gacha records" }
+
+
+    require(rawRecords.isNotEmpty()) { "UIGF file does not contain any records!" }
     val sanitizedData = rawRecords.map { record ->
         record.copy(itemType = record.sanitizeItemName())
     }
     Pair(uid, sanitizedData)
 }
 
+// sanitize the name of the item type (from zh-cn to en-us)
 fun GachaRecord.sanitizeItemName(): String {
     return when (this.itemType) {
         "角色", "character", "Character" -> "character"

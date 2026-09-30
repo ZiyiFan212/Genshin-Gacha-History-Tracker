@@ -7,9 +7,9 @@ import kotlinx.coroutines.withContext
 import utilities.LogBody
 import utilities.LogLevel
 import utilities.LogWriter
+import utilities.debug
 import model.GachaRecord
 import model.sanitizeItemName
-import storage.AppDatabase
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
@@ -48,10 +48,9 @@ class ProxyService {
      * Capture gacha records
      *
      * @param onPhase Callback function to notify capture phase changes
-     * @param currentUid Currently selected user UID, used to query database for latest record ID during incremental update
      * @return Result containing UID and list of gacha records
      */
-    suspend fun captureGachaRecords(onPhase: (CapturePhase) -> Unit = {}, currentUid: String? = null):
+    suspend fun captureGachaRecords(onPhase: (CapturePhase) -> Unit = {}):
             Result<Pair<String, List<GachaRecord>>> {
 
         return withContext(Dispatchers.IO) {
@@ -84,14 +83,17 @@ class ProxyService {
                 }
 
                 onPhase(CapturePhase.WAITING_FOR_GAME)
-                //debug(proxyProcess)
+                streamProxyDebugOutput(proxyProcess)
+                debug("ProxyService: waiting for Node exit (120s); proxy=8080, receiver=3000")
 
                 val finished = proxyProcess.waitFor(120, TimeUnit.SECONDS)
                 if (!finished) {
+                    debug("ProxyService: Node exit timed out; URL received=${proxyReceiver.getCapturedAuthKeyUrl() != null}")
                     proxyProcess.destroyForcibly()
                     return@withContext Result.failure(ProxyException(ProxyExceptionType.TIMEOUT))
                 }
 
+                debug("ProxyService: Node exited with code ${proxyProcess.exitValue()}")
                 if (proxyProcess.exitValue() != 0) {
                     val exitCode = proxyProcess.exitValue()
                     LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Proxy script exited with code $exitCode"))
@@ -107,15 +109,12 @@ class ProxyService {
                     ?: return@withContext Result.failure(ProxyException(ProxyExceptionType.NO_AUTHKEY))
 
                 onPhase(CapturePhase.FETCHING)
+                debug("ProxyService: creating Fetcher")
                 fetcher = Fetcher(authKeyURL)
-
-                if (currentUid != null) {
-                    val lastEndId = AppDatabase.getLastEndID(currentUid).getOrNull()
-                    if (!lastEndId.isNullOrEmpty())
-                        fetcher.setLastEndId(lastEndId)
-                }
+                debug("ProxyService: Fetcher initialized; query preparation completed")
 
                 val javaRecords = try {
+                    debug("ProxyService: calling Fetcher.getAllRecords()")
                     fetcher.getAllRecords()
                 } catch (e: IOException) {
                     return@withContext Result.failure(ProxyException(ProxyExceptionType.SERVER_CONNECTION, cause = e))
@@ -133,7 +132,8 @@ class ProxyService {
                     )
                 }
 
-                Result.success(Fetcher.getUid() to records)
+                debug("ProxyService: fetch completed; records=${records.size}, UID present=${fetcher.getUid().isNotBlank()}")
+                Result.success(fetcher.getUid() to records)
             } catch (e: AuthkeyExpiredException) {
                 Result.failure(ProxyException(ProxyExceptionType.AUTHKEY_EXPIRED, cause = e))
             } catch (e: GachaServerConnectionException) {
@@ -245,20 +245,24 @@ class ProxyService {
         }
     }
 
-    /**
-    private fun debug (process: Process) {
+    private fun streamProxyDebugOutput(process: Process) {
         Thread {
-            BufferedReader(InputStreamReader(process.inputStream, StandardCharsets.UTF_8)).use { reader ->
-                var line?
-                while (reader.readLine().also { line = it } != null) {
-                    AppLogger.debug("$line")
+            try {
+                process.inputStream.bufferedReader(Charsets.UTF_8).use { reader ->
+                    reader.forEachLine { line ->
+                        val redacted = line.replace(Regex("(?i)(authkey=)[^&\\s]+"), "$1[REDACTED]")
+                        debug("Node: $redacted")
+                    }
                 }
+                debug("ProxyService: Node output stream closed")
+            } catch (e: IOException) {
+                debug("ProxyService: Node output reader stopped (${e.javaClass.simpleName})")
             }
         }.apply {
+            name = "proxy-output-reader"
             isDaemon = true
             start()
         }
     }
-    */
 
 }

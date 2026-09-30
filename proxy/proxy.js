@@ -59,7 +59,7 @@ const notifyKotlin = (url) => {
             res.on('data', (chunk) => { data += chunk })
             res.on('end', () => {
                 if (res.statusCode === 200) {
-                    console.log('[proxy] Kotlin acknowledged. Authkey captured:', fixed)
+                    console.log(`[proxy] Kotlin HTTP 200 acknowledged; URL received (${fixed.length} chars)`)
                     resolve(fixed)
                 } else {
                     reject(proxyCaptureError(EXIT.DELIVERY_FAILED, `Failed to send authkey to Kotlin server. Status code: ${res.statusCode}`))
@@ -174,13 +174,17 @@ const startProxy = async (port = PROXY_PORT) => {
 const stopProxy = async () => {
     try {
         if (proxyStarted && proxyWasEnabled) {
+            console.log('[proxy] Restoring system proxy: disabling capture proxy')
             await setSystemProxy(false)
+            console.log('[proxy] System proxy disabled')
             proxyWasEnabled = false
         }
         proxyStarted = false
 
         if (proxyServer) {
+            console.log('[proxy] Closing MITM proxy server')
             proxyServer.close()
+            console.log('[proxy] MITM proxy close requested')
             proxyServer = null
         }
 
@@ -233,7 +237,9 @@ const captureAuthkeyViaProxy = async (port = PROXY_PORT) => {
     try {
         await startProxy(port)
         const capturedUrl = await getCapturedUrl()
+        console.log('[proxy] Capture resolved; starting cleanup')
         await stopProxy()
+        console.log('[proxy] Cleanup completed; returning captured URL')
         return capturedUrl
     } catch (e) {
         console.error('[proxy] Exception occurred in capturing authkey via the proxy server. Error message: ', e.message)
@@ -281,7 +287,7 @@ if (require.main === module) {
                 console.log('[proxy] No authkey is captured.')
                 process.exit(EXIT.FAILED)
             }
-            console.log(`[proxy] Success! Captured URL:\n${authkeyUrl}`)
+            console.log(`[proxy] Success! Captured URL (${authkeyUrl.length} chars); exiting with code 0`)
             process.exit(EXIT.SUCCESS)
         } catch (e) {
             console.error(`[proxy] Failed. Error message: ${e.message}`)

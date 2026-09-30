@@ -7,6 +7,7 @@ import com.sun.net.httpserver.HttpExchange
 import utilities.LogBody
 import utilities.LogLevel
 import utilities.LogWriter
+import utilities.debug
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.charset.StandardCharsets
@@ -58,6 +59,7 @@ class ProxyReceiver {
 
                 capturedAuthKeyUrl = gachaUrl
                 LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "Authkey URL captured (${gachaUrl.length} chars)"))
+                debug("ProxyReceiver: URL saved (${gachaUrl.length} chars); preparing HTTP 200")
             }
 
             val response = "OK"
@@ -66,6 +68,7 @@ class ProxyReceiver {
             exchange.responseBody.use { outputStream ->
                 outputStream.write(responseBytes)
             }
+            debug("ProxyReceiver: HTTP 200 response completed")
         } catch (e: JsonProcessingException) {
             LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "ProxyReceiver: failed to parse authkey JSON", e))
             sendError(exchange, 400)

@@ -253,10 +253,20 @@ fun List<GachaRecord>.monthlyConsumption(): List<MonthlyConsumption> {
 }
 
 /**
- * 计算最长无抽卡间隔（天）。
+ * If the list is zero, it returns 0; if the list is size 1, it returns the gap between the
+ * pull date to the current date in an integer.
+ * Otherwise, the gap is calculated through iterating the list.
  */
 fun List<GachaRecord>.longestNoPullIntervalDays(): Int {
-    if (size < 2) return 0
+    if (this.isEmpty()) return 0
+
+    // Handle if there's only one pull in the list.
+    val today = LocalDate.now()
+    if (this.size == 1){
+        val pullDate = LocalDate.parse(this[0].time.substring(0, 10))
+        return ChronoUnit.DAYS.between(pullDate, today).toInt()
+    }
+
     val sorted = sortedChronologically()
     var maxGap = 0
 
@@ -269,7 +279,6 @@ fun List<GachaRecord>.longestNoPullIntervalDays(): Int {
 
     if (sorted.lastOrNull() != null) {
         val lastDate = LocalDate.parse(sorted.last().time.substring(0, 10))
-        val today = LocalDate.now()
         val lastGap = ChronoUnit.DAYS.between(lastDate, today)
         if (lastGap > maxGap) maxGap = lastGap.toInt()
     }

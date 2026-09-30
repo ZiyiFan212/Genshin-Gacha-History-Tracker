@@ -58,16 +58,7 @@ public class Fetcher implements AutoCloseable {
         setKeys(authKeyUrl);
     }
 
-    public static @NotNull String getUid() { return uid; }
-
-    /**
-     * Allowing the service layer to set the last pull ID. Called only if this user
-     * has previously saved records.
-     * @param endId last wish's pull ID.
-     */
-    public void setLastEndId(String endId) {
-        this.lastEndId = endId;
-    }
+    public @NotNull String getUid() { return uid; }
 
     @Override
     public void close() {
@@ -77,6 +68,7 @@ public class Fetcher implements AutoCloseable {
     }
 
     public List<GachaRecord> getAllRecords() throws GachaServerConnectionException, AuthkeyExpiredException {
+        uid = "";
         List<GachaRecord> gachaRecords = new ArrayList<>();
         int currentBanner = 0;
 
@@ -90,17 +82,12 @@ public class Fetcher implements AutoCloseable {
         } catch (Exception e) {
             throw new GachaServerConnectionException(
                     "Error occurred in reading the banner: " + Banner_Type[currentBanner], e);
-        } finally {
-            uid = "";
-            CALLED = false;
         }
     }
 
     private static final int MAX_RETRIES = 3;
     private static final int TOO_FREQUENT_DELAY_MS = 5000;
-    private static boolean CALLED = false;
-    private static String uid = "";
-    private String lastEndId = null;
+    private String uid = "";
 
     /**
      * Fetch gacha records for a single banner
@@ -118,7 +105,6 @@ public class Fetcher implements AutoCloseable {
 
         String endID = null;
         List<GachaRecord> currentBannerRecords = new ArrayList<>();
-        if (lastEndId != null) endID = lastEndId;
 
         while (true) {
             int retries = 0;
@@ -193,7 +179,7 @@ public class Fetcher implements AutoCloseable {
 
             if (data != null && data.isArray()) {
                 for (JsonNode item : data) {
-                    CALLED = CALLED || setUid(item);
+                    if (uid.isEmpty()) setUid(item);
                     GachaRecord rd = new GachaRecord(
                             item.get("gacha_type").asText(),
                             item.get("time").asText(),
@@ -220,9 +206,8 @@ public class Fetcher implements AutoCloseable {
 
 
 
-    private boolean setUid(JsonNode item) {
+    private void setUid(JsonNode item) {
         uid = item.get("uid").asText();
-        return true;
     }
 
     private void setKeys(String authKeyUrl) throws InvalidAuthkeyUrlException {

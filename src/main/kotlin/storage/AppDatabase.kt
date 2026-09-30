@@ -172,19 +172,4 @@ object AppDatabase {
             }
         }
 
-    suspend fun getLastEndID(uid: String): Result<String> =
-        withDb { conn ->
-            val sql = "SELECT MAX(record_id) as max_id FROM gacha_records WHERE uid = ?"
-            conn.prepareStatement(sql).use { statement ->
-                statement.setString(1, uid)
-                statement.executeQuery().use { rs ->
-                    if (rs.next()) {
-                        rs.getString("max_id") ?: ""
-                    } else {
-                        ""
-                    }
-                }
-            }
-        }
-
 }

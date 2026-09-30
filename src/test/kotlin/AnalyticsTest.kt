@@ -7,6 +7,7 @@ import analytics.buildTimeline
 import analytics.calendarDays
 import analytics.currentPity
 import analytics.monthlyConsumption
+import analytics.longestNoPullIntervalDays
 import analytics.pityState
 import backup.BackupManager
 import storage.CsvExporter
@@ -21,8 +22,39 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 class AnalyticsTest {
+
+    @Test
+    fun `longest no pull interval is zero`() {
+        assertEquals(0, emptyList<GachaRecord>().longestNoPullIntervalDays())
+    }
+
+    @Test
+    fun `Single pull`() {
+        val before = LocalDate.now()
+        val pullDate = before.minusDays(12)
+        val records = listOf(record("301", "$pullDate 12:00:00", 3))
+
+        val actual = records.longestNoPullIntervalDays()
+
+        val after = LocalDate.now()
+        // Allow the date to roll over at midnight while the test is running.
+        assertTrue(actual in 12..ChronoUnit.DAYS.between(pullDate, after).toInt())
+    }
+
+    @Test
+    fun `longest no pull interval for a pull today has no completed day`() {
+        val before = LocalDate.now()
+        val records = listOf(record("301", "$before 00:00:00", 3))
+
+        val actual = records.longestNoPullIntervalDays()
+
+        val after = LocalDate.now()
+        assertTrue(actual in 0..ChronoUnit.DAYS.between(before, after).toInt())
+    }
 
     private fun record(
         gacha: String,

@@ -58,6 +58,14 @@ fun SettingsScreen(
             }
         }
 
+        if (themeMode == ThemeModeManager.SYSTEM) {
+            Text(
+                I18nManager["settings.theme_time_hint"],
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
         Text(
             I18nManager["settings.language"],
             style = MaterialTheme.typography.titleSmall,

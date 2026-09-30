@@ -239,7 +239,6 @@ class AppViewModel {
 
                         val (uid, imported) = proxyService.captureGachaRecords(
                             onPhase = { phase -> UiState.update { it.copy(capturePhase = phase) } },
-                            currentUid = UiState.value.selectedUid
                         ).getOrThrow()
                         val validation = DataValidator.validate(imported, uid)
                         if (validation.hasErrors) {

@@ -123,7 +123,7 @@ object PreferencesManager {
         fun isSystemInDarkTheme(): Boolean
     }
     class CustomizedThemeDetector : ThemeDetector {
-        // logic relies on system local time
+        // Uses local time when evaluated; does not read the OS theme or schedule UI updates.
         override fun isSystemInDarkTheme(): Boolean {
             val currentTime: LocalDateTime = LocalDateTime.now()
             val currentHour = currentTime.hour

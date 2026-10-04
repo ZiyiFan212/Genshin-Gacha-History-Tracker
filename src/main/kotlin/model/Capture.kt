@@ -1,0 +1,22 @@
+package model
+
+enum class CapturePhase {
+    STARTING,
+    WAITING_FOR_GAME,
+    FETCHING,
+}
+
+enum class ProxyExceptionType {
+    TIMEOUT,
+    PROXY_SCRIPT_FAILED,
+    NO_AUTHKEY,
+    AUTHKEY_EXPIRED,
+    SERVER_CONNECTION,
+    INVALID_AUTHKEY_URL,
+    PROXY_NOT_FOUND,
+    PROXY_START_FAILED,
+    FETCH_FAILED,
+    AUTHKEY_DELIVERY_FAILED,
+    OPERATION_CANCELLED,
+}
+

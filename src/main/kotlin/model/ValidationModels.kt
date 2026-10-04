@@ -6,8 +6,6 @@ data class ValidationIssue(
     val recordId: String? = null,
 )
 
-enum class Severity { INFO, WARN, ERROR }
-
 data class ValidationReport(
     val issues: List<ValidationIssue>,
 ) {

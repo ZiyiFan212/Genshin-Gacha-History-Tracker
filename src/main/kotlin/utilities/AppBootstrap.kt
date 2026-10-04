@@ -5,6 +5,7 @@ import assets.IconManager
 import assets.ItemTranslator
 import assets.UpTimeLoader
 import storage.IOConfiguration
+import utilities.preference.PreferencesManager
 
 object AppBootstrap {
 

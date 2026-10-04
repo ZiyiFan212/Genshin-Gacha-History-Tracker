@@ -58,9 +58,9 @@ import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowState
 import java.awt.Frame
-import utilities.LogBody
-import utilities.LogLevel
-import utilities.LogWriter
+import logger.LogBody
+import logger.LogLevel
+import logger.LogWriter
 import ui.components.MessageBanner
 import ui.screens.CalendarScreen
 import ui.screens.CaptureScreen
@@ -71,8 +71,8 @@ import ui.screens.SettingsScreen
 import ui.screens.StatsScreen
 import ui.screens.TimelineScreen
 import ui.theme.GenshinTheme
-import utilities.PreferencesManager
-import utilities.ThemeModeManager
+import utilities.preference.PreferencesManager
+import utilities.preference.ThemeModeManager
 
 @Composable
 fun FrameWindowScope.App(viewModel: AppViewModel,

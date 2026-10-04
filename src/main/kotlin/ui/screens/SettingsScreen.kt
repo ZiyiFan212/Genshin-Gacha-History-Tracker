@@ -17,7 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ui.components.SectionTitle
-import utilities.ThemeModeManager
+import utilities.preference.ThemeModeManager
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

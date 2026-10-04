@@ -1,10 +1,12 @@
 package backup
 
-import utilities.LogBody
-import utilities.LogLevel
-import utilities.LogWriter
+import logger.LogBody
+import logger.LogLevel
+import logger.LogWriter
 import storage.IOConfiguration
+import storage.Database
 import java.nio.file.Files
+import java.util.UUID
 import java.nio.file.StandardCopyOption
 import java.time.Instant
 import kotlin.io.path.listDirectoryEntries
@@ -13,15 +15,22 @@ import kotlin.io.path.name
 object BackupManager {
     private val backupDir = IOConfiguration.default_STORAGEPath.resolve("backups")
 
-    fun backupBeforeImport(): Result<java.nio.file.Path> = runCatching {
+    suspend fun backupBeforeImport(): Result<java.nio.file.Path> = runCatching {
         val db = IOConfiguration.default_databasePath
         if (!Files.exists(db)) {
             LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "No database to backup yet"))
             return@runCatching db
         }
         Files.createDirectories(backupDir)
-        val target = backupDir.resolve("gacha_${Instant.now().epochSecond}.db")
-        Files.copy(db, target, StandardCopyOption.REPLACE_EXISTING)
+        val target = backupDir.resolve("gacha_${Instant.now().epochSecond}_${UUID.randomUUID()}.db")
+        val staging = target.resolveSibling("${target.fileName}.partial")
+        try {
+            Database.backupTo(staging).getOrThrow()
+            Files.move(staging, target, StandardCopyOption.ATOMIC_MOVE)
+        } catch (e: Exception) {
+            Files.deleteIfExists(staging)
+            throw e
+        }
         LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "Database backed up to $target"))
         target
     }

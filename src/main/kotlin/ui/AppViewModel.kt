@@ -33,22 +33,21 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import utilities.LogBody
-import utilities.LogLevel
-import utilities.LogWriter
+import logger.LogBody
+import logger.LogLevel
+import logger.LogWriter
 import excelWriter.ExcelWriter
-import storage.AppDatabase
+import storage.Database
+import storage.ImportInvalidatedException
 import model.GachaRecord
 import model.UserStatistics
 import model.parseJson
 import utilities.AppBootstrap
-import utilities.PreferencesManager
-import utilities.ThemeModeManager
-import analytics.calculateStat
+import utilities.preference.PreferencesManager
+import utilities.preference.ThemeModeManager
 import analytics.upRatioCalculator
 import assets.ItemTranslator
 import kotlinx.coroutines.cancel
-import utilities.mergeWith
 import utilities.safeUserMessage
 import validation.DataValidator
 import validation.Severity
@@ -188,6 +187,7 @@ class AppViewModel {
             UiState.update { it.copy(isLoading = true, error = null) }
             withContext(Dispatchers.IO) {
                 runCatching {
+                    val importTicket = Database.beginImport().getOrThrow()
                     BackupManager.backupBeforeImport().getOrThrow()
                     val json = path.readText()
                     val (uid, imported) = parseJson(json).getOrThrow()
@@ -198,11 +198,9 @@ class AppViewModel {
                         )
                     }
 
-                    val existing = AppDatabase.search(uid).getOrThrow()?.first ?: emptyList()
-                        val merged = imported.mergeWith(existing)
-                        val newCount = maxOf(0, merged.size - existing.size)
-                        val stats = merged.calculateStat()
-                    AppDatabase.upsert(uid to merged, stats).getOrThrow()
+                    val result = Database.mergeRecords(uid, imported, importTicket).getOrThrow()
+                    val merged = result.records
+                    val newCount = result.newCount
 
                     withContext(Dispatchers.Main) {
                         UiState.update {
@@ -217,7 +215,9 @@ class AppViewModel {
                     }
                 }.onFailure { e ->
                     LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Import failed", e))
-                    UiState.update { it.copy(isLoading = false, error = e.message ?: "Import failed") }
+                    UiState.update {
+                        it.copy(isLoading = false, error = if (e is ImportInvalidatedException) e.safeUserMessage() else e.message ?: "Import failed")
+                    }
                 }
             }
         }
@@ -235,6 +235,7 @@ class AppViewModel {
             try {
                 withContext(Dispatchers.IO) {
                     runCatching {
+                        val importTicket = Database.beginImport().getOrThrow()
                         BackupManager.backupBeforeImport().getOrThrow()
 
                         val (uid, imported) = proxyService.captureGachaRecords(
@@ -247,11 +248,9 @@ class AppViewModel {
                             )
                         }
 
-                        val existing = AppDatabase.search(uid).getOrThrow()?.first ?: emptyList()
-                        val merged = imported.mergeWith(existing)
-                        val newCount = (merged.size - existing.size).coerceAtLeast(0)
-                        val stats = merged.calculateStat()
-                        AppDatabase.upsert(uid to merged, stats).getOrThrow()
+                        val result = Database.mergeRecords(uid, imported, importTicket).getOrThrow()
+                        val merged = result.records
+                        val newCount = result.newCount
 
                         withContext(Dispatchers.Main) {
                             UiState.update {
@@ -358,14 +357,14 @@ class AppViewModel {
     // database disconnected & all coroutines canceled
     fun shutdown() {
         LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "Application shutting down: disconnecting the database and cancelling all running coroutines."))
-        AppDatabase.dbClose()
         scope.cancel()
+        Database.dbClose()
     }
 
     fun deleteCurrentUid() {
         val uid = UiState.value.selectedUid ?: return
         scope.launch {
-            AppDatabase.delete(uid).onSuccess {
+            Database.delete(uid).onSuccess {
                 refreshUidList()
                 val next = UiState.value.uids.firstOrNull()
                 if (next != null) selectUid(next)
@@ -375,12 +374,15 @@ class AppViewModel {
                         streakAnalysis = null, goldHistory = emptyMap(), calendarDays = emptyMap())
                 }
                 invalidateAnalyticsCache()
+            }.onFailure { e ->
+                LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Failed to delete uid=$uid", e))
+                UiState.update { it.copy(error = e.message) }
             }
         }
     }
 
     private suspend fun refreshUidList() {
-        val uids = AppDatabase.listAllUids().getOrDefault(emptyList())
+        val uids = Database.listAllUids().getOrDefault(emptyList())
         UiState.update { it.copy(uids = uids) }
         if (UiState.value.selectedUid == null && uids.isNotEmpty()) {
             loadUid(uids.first())
@@ -389,7 +391,7 @@ class AppViewModel {
 
     private suspend fun loadUid(uid: String) {
         withContext(Dispatchers.IO) {
-            AppDatabase.search(uid).onSuccess { data ->
+            Database.search(uid).onSuccess { data ->
                 val records = data?.first ?: emptyList()
                 val stats = data?.second
                 UiState.update {
@@ -416,12 +418,8 @@ class AppViewModel {
         val uid = UiState.value.selectedUid ?: return
         scope.launch {
             withContext(Dispatchers.IO) {
-                AppDatabase.getRecord(uid).onSuccess { records ->
-
-                    // update the statistics
-                    val newStats = records.calculateStat()
-                    AppDatabase.updateCurrentUser(uid, newStats)
-                    UiState.update { it.copy(stats = newStats) }
+                Database.updateStats(uid).onSuccess {
+                    if (UiState.value.selectedUid == uid) loadUid(uid)
                 }.onFailure { e ->
                     LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Failed to update stats for uid=$uid", e))
                 }
@@ -434,15 +432,10 @@ class AppViewModel {
         //AppLogger.debug("begin reassign id")
         scope.launch {
             withContext(Dispatchers.IO) {
-                AppDatabase.getRecord(uid).onSuccess { records ->
-                    val updated = records.map {
-
-                            it.copy(itemID = ItemTranslator.getIdByName(it.name))
-
-                    }
-                    AppDatabase.updateRecords(uid, updated)
-                    UiState.update { it.copy(records = updated) }
-                    invalidateAnalyticsCache()
+                Database.updateRecords(uid) { records ->
+                    records.map { it.copy(itemID = ItemTranslator.getIdByName(it.name)) }
+                }.onSuccess {
+                    if (UiState.value.selectedUid == uid) loadUid(uid)
                 }.onFailure { e ->
                     LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Failed to update records for uid=$uid", e))
                 }

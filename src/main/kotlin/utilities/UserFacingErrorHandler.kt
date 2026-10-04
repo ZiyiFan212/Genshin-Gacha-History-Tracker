@@ -6,6 +6,10 @@ import core.ProxyExceptionType
 import core.GachaServerConnectionException
 import core.InvalidAuthkeyUrlException
 import core.ProxyException
+import logger.LogBody
+import logger.LogLevel
+import logger.LogWriter
+import storage.ImportInvalidatedException
 
 
 fun ProxyExceptionType.userMessage(): String = I18nManager[i18nKey()]
@@ -27,6 +31,7 @@ fun ProxyExceptionType.i18nKey(): String = when (this) {
 fun Throwable.toUserMessage(): String {
     if (this is ProxyException) return error.userMessage()
     return when (rootCause()) {
+        is ImportInvalidatedException -> I18nManager["error.import_invalidated"]
         is AuthkeyExpiredException -> I18nManager["error.authkey_expired"]
         is GachaServerConnectionException -> I18nManager["error.server_connection"]
         is InvalidAuthkeyUrlException -> I18nManager["error.invalid_authkey_url"]

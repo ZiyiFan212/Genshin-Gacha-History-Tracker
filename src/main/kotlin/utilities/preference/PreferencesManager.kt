@@ -1,4 +1,4 @@
-package utilities
+package utilities.preference
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

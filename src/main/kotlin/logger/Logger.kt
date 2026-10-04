@@ -1,4 +1,4 @@
-package utilities
+package logger
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope

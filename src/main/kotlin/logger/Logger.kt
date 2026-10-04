@@ -1,5 +1,7 @@
 package logger
 
+import model.Severity
+
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,10 +21,8 @@ import java.nio.file.StandardOpenOption.CREATE
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-enum class LogLevel { INFO, WARN, ERROR }
-
 data class LogBody(
-    val level: LogLevel,
+    val level: Severity,
     val message: String,
     val throwable: Throwable? = null,
     val timestamp: LocalDateTime = LocalDateTime.now()

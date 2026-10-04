@@ -20,7 +20,7 @@ import analytics.limitedWeaponAvgPity
 
 import assets.I18nManager
 import backup.BackupManager
-import core.CapturePhase
+import model.CapturePhase
 import core.ProxyService
 import storage.CsvExporter
 import storage.HtmlExporter
@@ -34,7 +34,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import logger.LogBody
-import logger.LogLevel
+import model.Severity
 import logger.LogWriter
 import excelWriter.ExcelWriter
 import storage.Database
@@ -50,7 +50,6 @@ import assets.ItemTranslator
 import kotlinx.coroutines.cancel
 import utilities.safeUserMessage
 import validation.DataValidator
-import model.Severity
 import model.ValidationReport
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
@@ -124,7 +123,7 @@ class AppViewModel {
             )
             analyticsCache = cache
             analyticsCacheUid = uid
-            LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "Analytics cache computed for uid=$uid"))
+            LogWriter.instance.tryLog(LogBody(Severity.INFO, "Analytics cache computed for uid=$uid"))
             return cache
         }
     }
@@ -155,9 +154,9 @@ class AppViewModel {
                     )
                 }
                 refreshUidList()
-                LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "Application initialized"))
+                LogWriter.instance.tryLog(LogBody(Severity.INFO, "Application initialized"))
             }.onFailure { e ->
-                LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Initialization failed", e))
+                LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Initialization failed", e))
                 UiState.update { it.copy(isLoading = false, error = e.message ?: "Init failed") }
             }
         }
@@ -214,7 +213,7 @@ class AppViewModel {
                         selectUid(uid)
                     }
                 }.onFailure { e ->
-                    LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Import failed", e))
+                    LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Import failed", e))
                     UiState.update {
                         it.copy(isLoading = false, error = if (e is ImportInvalidatedException) e.safeUserMessage() else e.message ?: "Import failed")
                     }
@@ -264,7 +263,7 @@ class AppViewModel {
                             navigate(AppScreen.TIMELINE)
                         }
                     }.onFailure { e ->
-                        LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Proxy capture failed", e))
+                        LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Proxy capture failed", e))
                         UiState.update { it.copy(error = e.safeUserMessage()) }
                     }
                 }
@@ -282,10 +281,10 @@ class AppViewModel {
             UigfExporter.export(uid to records, version)
                 .onSuccess { path ->
                     UiState.update { it.copy(message = I18nManager["message.export_success"] + " → $path") }
-                    LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "UIGF export: ignoreThreeStar is always false for UIGF format, exported to $path"))
+                    LogWriter.instance.tryLog(LogBody(Severity.INFO, "UIGF export: ignoreThreeStar is always false for UIGF format, exported to $path"))
                 }
                 .onFailure { e ->
-                    LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "UIGF export failed", e))
+                    LogWriter.instance.tryLog(LogBody(Severity.ERROR, "UIGF export failed", e))
                     UiState.update { it.copy(error = e.message) }
                 }
         }
@@ -299,9 +298,9 @@ class AppViewModel {
                 ExcelWriter.exportExcel(mapOf(uid to records))
             }.onSuccess {
                 UiState.update { it.copy(message = I18nManager["message.export_success"]) }
-                LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "Excel exported for uid=$uid"))
+                LogWriter.instance.tryLog(LogBody(Severity.INFO, "Excel exported for uid=$uid"))
             }.onFailure { e ->
-                LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Excel export failed", e))
+                LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Excel export failed", e))
                 UiState.update { it.copy(error = e.message) }
             }
         }
@@ -356,7 +355,7 @@ class AppViewModel {
 
     // database disconnected & all coroutines canceled
     fun shutdown() {
-        LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "Application shutting down: disconnecting the database and cancelling all running coroutines."))
+        LogWriter.instance.tryLog(LogBody(Severity.INFO, "Application shutting down: disconnecting the database and cancelling all running coroutines."))
         scope.cancel()
         Database.dbClose()
     }
@@ -375,7 +374,7 @@ class AppViewModel {
                 }
                 invalidateAnalyticsCache()
             }.onFailure { e ->
-                LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Failed to delete uid=$uid", e))
+                LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to delete uid=$uid", e))
                 UiState.update { it.copy(error = e.message) }
             }
         }
@@ -408,7 +407,7 @@ class AppViewModel {
                 }
                 invalidateAnalyticsCache()
             }.onFailure { e ->
-                LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Failed to load uid=$uid", e))
+                LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to load uid=$uid", e))
                 UiState.update { it.copy(isLoading = false, error = e.message) }
             }
         }
@@ -421,7 +420,7 @@ class AppViewModel {
                 Database.updateStats(uid).onSuccess {
                     if (UiState.value.selectedUid == uid) loadUid(uid)
                 }.onFailure { e ->
-                    LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Failed to update stats for uid=$uid", e))
+                    LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to update stats for uid=$uid", e))
                 }
             }
         }
@@ -437,7 +436,7 @@ class AppViewModel {
                 }.onSuccess {
                     if (UiState.value.selectedUid == uid) loadUid(uid)
                 }.onFailure { e ->
-                    LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Failed to update records for uid=$uid", e))
+                    LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to update records for uid=$uid", e))
                 }
             }
         }

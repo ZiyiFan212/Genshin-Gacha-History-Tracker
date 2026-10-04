@@ -59,7 +59,7 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowState
 import java.awt.Frame
 import logger.LogBody
-import logger.LogLevel
+import model.Severity
 import logger.LogWriter
 import ui.components.MessageBanner
 import ui.screens.CalendarScreen
@@ -262,7 +262,7 @@ private fun FrameWindowScope.IntelliJToolBar(
                 icon = Icons.Default.Minimize,
                 contentDescription = I18nManager["appUI.minimize"],
                 onClick = {
-                    LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "Window minimized via toolbar button"))
+                    LogWriter.instance.tryLog(LogBody(Severity.INFO, "Window minimized via toolbar button"))
                     window.extendedState = Frame.ICONIFIED
                 },
             )
@@ -271,7 +271,7 @@ private fun FrameWindowScope.IntelliJToolBar(
                 icon = if (windowState.placement == WindowPlacement.Maximized) Icons.Default.CropSquare else Icons.Default.Fullscreen,
                 contentDescription = if (windowState.placement == WindowPlacement.Maximized) I18nManager["appUI.restore"] else I18nManager["appUI.maximize"],
                 onClick = {
-                    LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "Window maximize/restore clicked, current placement: ${windowState.placement}, extendedState: ${window.extendedState}"))
+                    LogWriter.instance.tryLog(LogBody(Severity.INFO, "Window maximize/restore clicked, current placement: ${windowState.placement}, extendedState: ${window.extendedState}"))
                     if (window.extendedState == Frame.ICONIFIED) {
                         window.extendedState = Frame.NORMAL
                     }
@@ -287,7 +287,7 @@ private fun FrameWindowScope.IntelliJToolBar(
                 icon = Icons.Default.Close,
                 contentDescription = I18nManager["appUI.exit"],
                 onClick = {
-                    LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "Window close button clicked"))
+                    LogWriter.instance.tryLog(LogBody(Severity.INFO, "Window close button clicked"))
                     onExit()
                 },
                 isDanger = true,

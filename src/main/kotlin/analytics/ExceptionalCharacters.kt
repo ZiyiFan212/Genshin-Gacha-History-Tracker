@@ -2,7 +2,7 @@ package analytics
 
 import model.GachaRecord
 import utilities.AppConstants
-import utilities.AppConstants.GuaranteeType
+import model.GuaranteeType
 
 object ExceptionalCharacters {
     // 特殊角色id

@@ -30,36 +30,6 @@ object AppConstants {
     const val STANDARD_EVENT_BANNER = "200"
     const val NOVICE_EVENT_BANNER = "100"
 
-    /**
-     * Enum class to define different guarantee types.
-     *
-     * - [WON_FIFTY_FIFTY]: Winning a 50/50.
-     * - [LOST_FIFTY_FIFTY]: Losing a 50/50.
-     * - [CAPTURE_RADIANCE]: Guaranteed pity after losing 50/50 three times.
-     * - [GUARANTEED]: Guaranteed pity after losing a 50/50.
-     * - [STANDARD]: Non-character event banner five-star items are marked as this.
-     * - [NONE]: Four-star items.
-     */
-    enum class GuaranteeType {
-        WON_FIFTY_FIFTY,
-        LOST_FIFTY_FIFTY,
-        CAPTURE_RADIANCE,
-        GUARANTEED,
-        STANDARD,
-        NONE,
-    }
-
-    /**
-     * Helper enum class to describe the status of every pull.
-     *
-     * - [UP]: Winning a limited five-star item, last was not guaranteed pity.
-     * - [LOSS]: Losing a 50/50.
-     * - [IGNORE]: Not counted banner and four-star items.
-     * - [GUARANTEED_UP]: The guaranteed five-star limited item after losing the 50/50
-     */
-    enum class Result {
-        UP, LOSS, IGNORE,GUARANTEED_UP    }
-
     fun resolveBannerPool(banner: String): Set<String> =
         if (banner in CharacterEventBannerSet) CharacterEventBannerSet else setOf(banner)
 }

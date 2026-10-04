@@ -9,8 +9,8 @@ import model.GachaRecord
 import model.compareGachaRecordIds
 import model.sortedChronologically
 import utilities.AppConstants
-import utilities.AppConstants.GuaranteeType
-import utilities.AppConstants.Result
+import model.GuaranteeType
+import model.PullOutcome
 
 /**
  * 根据卡池类型与历史五星，判定本次五星所属的保底类型。
@@ -74,7 +74,7 @@ fun List<GachaRecord>.analyzeStreaks(
         var lossStreak = 0
         var maxUp = 0
         var maxLoss = 0
-        var prevState: Result? = null
+        var prevState: PullOutcome? = null
 
         val pool = AppConstants.resolveBannerPool(banner)
 
@@ -83,31 +83,31 @@ fun List<GachaRecord>.analyzeStreaks(
 
             /** 只计入武器 + 角色， 剩下暂不计入，详情见 [shouldIgnore] */
             val state = if (shouldIgnore(banner)) {
-                Result.IGNORE
+                PullOutcome.IGNORE
             } else {
                 val isUp = !AppConstants.StandardItemUID.contains(record.itemID)
-                if (isUp && prevState == Result.LOSS) {
-                    Result.GUARANTEED_UP// 大保底的金
+                if (isUp && prevState == PullOutcome.LOSS) {
+                    PullOutcome.GUARANTEED_UP// 大保底的金
                 } else if (isUp) {
-                    Result.UP// 上一个没歪，那么这次小保底拿下
+                    PullOutcome.UP// 上一个没歪，那么这次小保底拿下
                 } else {
-                    Result.LOSS// 歪
+                    PullOutcome.LOSS// 歪
                 }
             }
 
             when (state) {
-                Result.LOSS -> {
+                PullOutcome.LOSS -> {
                     lossStreak++
                     if (upStreak != 0) upStreak = 0
                     maxLoss = maxOf(maxLoss, lossStreak)
                 }
-                Result.UP -> {
+                PullOutcome.UP -> {
                     upStreak++
                     if (lossStreak != 0) lossStreak = 0
                     maxUp = maxOf(maxUp, upStreak)
                 }
-                Result.GUARANTEED_UP -> {  }
-                Result.IGNORE -> {  }
+                PullOutcome.GUARANTEED_UP -> {  }
+                PullOutcome.IGNORE -> {  }
             }
 
             prevState = state
@@ -123,7 +123,7 @@ fun List<GachaRecord>.analyzeStreaks(
 
 /**
  * 检查本次抽卡是否需要被忽略。
- * [Result.IGNORE]（四星、常驻、新手和集录祈愿）
+ * [PullOutcome.IGNORE]（四星、常驻、新手和集录祈愿）
  * 因为我们无法确定用户的定轨，所以无法分析是歪了还是赢了。
  */
 private fun shouldIgnore (banner: String): Boolean {

@@ -28,7 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import core.CapturePhase
+import model.CapturePhase
 import ui.components.SectionTitle
 
 @Composable

@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import logger.LogBody;
 import model.GachaRecord;
 import utilities.AppConstants;
-import logger.LogLevel;
+import model.Severity;
 import logger.LogWriter;
 
 import java.io.IOException;
@@ -127,7 +127,7 @@ public class Fetcher implements AutoCloseable {
                     } else {
                         urlBuilder.append("&end_id=0");
                     }
-                    LogWriter.Companion.getInstance().tryLog(new LogBody(LogLevel.INFO, urlBuilder.substring(0, 20), null, LocalDateTime.now()));
+                    LogWriter.Companion.getInstance().tryLog(new LogBody(Severity.INFO, urlBuilder.substring(0, 20), null, LocalDateTime.now()));
 
                     HttpRequest request = HttpRequest.newBuilder()
                             .uri(URI.create(urlBuilder.toString()))
@@ -164,7 +164,7 @@ public class Fetcher implements AutoCloseable {
 
                 } catch (TooFrequentRequestException e) {
                     retries++;
-                    LogWriter.Companion.getInstance().tryLog(new LogBody(LogLevel.WARN, "Too frequent retry!", null, LocalDateTime.now()));
+                    LogWriter.Companion.getInstance().tryLog(new LogBody(Severity.WARN, "Too frequent retry!", null, LocalDateTime.now()));
                     Thread.sleep(TOO_FREQUENT_DELAY_MS * retries);
                     if (retries >= MAX_RETRIES) {
                         client.close();
@@ -200,7 +200,7 @@ public class Fetcher implements AutoCloseable {
             endID = pageRecords.getLast().getRecordID();
             Thread.sleep(Base_Delay + rand.nextInt(500, 1500));
         }
-        LogWriter.Companion.getInstance().tryLog(new LogBody(LogLevel.INFO, "Numbers of record fetched: " + currentBannerRecords.size(), null, LocalDateTime.now()));
+        LogWriter.Companion.getInstance().tryLog(new LogBody(Severity.INFO, "Numbers of record fetched: " + currentBannerRecords.size(), null, LocalDateTime.now()));
         return currentBannerRecords;
     }
 

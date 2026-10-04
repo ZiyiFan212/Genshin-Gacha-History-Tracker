@@ -1,5 +1,7 @@
 package ui.components
 
+import model.GuaranteeType
+
 import model.GoldPullSegment
 import model.PityState
 import analytics.goldHistoryBanners
@@ -338,13 +340,13 @@ private fun GoldPullRow(
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Bold,
                     )
-                } else if (segment.guaranteeType == AppConstants.GuaranteeType.GUARANTEED) {
+                } else if (segment.guaranteeType == GuaranteeType.GUARANTEED) {
                     Text(
                         I18nManager["timeline.guaranteed"],
                         style = MaterialTheme.typography.labelSmall,
                         color = Color(0xFFFFD700),
                     )
-                } else if (segment.guaranteeType == AppConstants.GuaranteeType.CAPTURE_RADIANCE){
+                } else if (segment.guaranteeType == GuaranteeType.CAPTURE_RADIANCE){
                     Text(
                         I18nManager["timeline.capture_radiance"],
                         style = MaterialTheme.typography.labelSmall,

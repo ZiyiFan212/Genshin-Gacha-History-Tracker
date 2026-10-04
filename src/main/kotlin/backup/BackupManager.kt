@@ -1,7 +1,7 @@
 package backup
 
 import logger.LogBody
-import logger.LogLevel
+import model.Severity
 import logger.LogWriter
 import storage.IOConfiguration
 import storage.Database
@@ -18,7 +18,7 @@ object BackupManager {
     suspend fun backupBeforeImport(): Result<java.nio.file.Path> = runCatching {
         val db = IOConfiguration.default_databasePath
         if (!Files.exists(db)) {
-            LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "No database to backup yet"))
+            LogWriter.instance.tryLog(LogBody(Severity.INFO, "No database to backup yet"))
             return@runCatching db
         }
         Files.createDirectories(backupDir)
@@ -31,7 +31,7 @@ object BackupManager {
             Files.deleteIfExists(staging)
             throw e
         }
-        LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "Database backed up to $target"))
+        LogWriter.instance.tryLog(LogBody(Severity.INFO, "Database backed up to $target"))
         target
     }
 
@@ -44,7 +44,7 @@ object BackupManager {
     fun restoreBackup(backupPath: java.nio.file.Path): Result<Unit> = runCatching {
         require(Files.exists(backupPath)) { "Backup not found: $backupPath" }
         Files.copy(backupPath, Configuration.default_databasePath, StandardCopyOption.REPLACE_EXISTING)
-        LogWriter.instance.tryLog(LogBody(LogLevel.INFO, "Database restored from $backupPath"))
+        LogWriter.instance.tryLog(LogBody(Severity.INFO, "Database restored from $backupPath"))
     }
     */
 }

@@ -6,9 +6,9 @@ import model.UserStatistics
 import model.sortedChronologically
 import utilities.AppConstants
 import utilities.AppConstants.StandardItemUID
-import utilities.AppConstants.Result
+import model.PullOutcome
 import logger.LogBody
-import logger.LogLevel
+import model.Severity
 import logger.LogWriter
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -70,23 +70,23 @@ fun List<GachaRecord>.calculateStat(): UserStatistics {
 fun List<GachaRecord>.calculateWinRate(bannerPool: Set<String>): Double {
     var wins = 0
     var losses = 0
-    var prevState: Result? = null
+    var prevState: PullOutcome? = null
 
     for (record in filter { it.gachaType in bannerPool }.sortedChronologically()) {
         if (record.rankType != 5) continue
 
         val isUp = !StandardItemUID.contains(record.itemID)
         val state = when {
-            (isUp && prevState == Result.LOSS) -> Result.GUARANTEED_UP// 前一个歪了，本次就是guarantee
-            isUp -> Result.UP
-            else -> Result.LOSS
+            (isUp && prevState == PullOutcome.LOSS) -> PullOutcome.GUARANTEED_UP// 前一个歪了，本次就是guarantee
+            isUp -> PullOutcome.UP
+            else -> PullOutcome.LOSS
         }
 
         when (state) {
-            Result.UP -> wins++
-            Result.LOSS -> losses++
-            Result.GUARANTEED_UP -> { /* 不计算 */ }
-            Result.IGNORE -> { /* 仍然不计算 */ }
+            PullOutcome.UP -> wins++
+            PullOutcome.LOSS -> losses++
+            PullOutcome.GUARANTEED_UP -> { /* 不计算 */ }
+            PullOutcome.IGNORE -> { /* 仍然不计算 */ }
         }
 
         prevState = state
@@ -106,7 +106,7 @@ fun List<GachaRecord>.upRatioCalculator(bannerPool: Set<String> = setOf(AppConst
     AppConstants.CHARACTER_EVENT_BANNER2, AppConstants.WEAPON_EVENT_BANNER)): Pair<Double, Double> {
 
     UpTimeLoader.load().onFailure {
-        LogWriter.instance.tryLog(LogBody(LogLevel.WARN, "Failed to load h up-time map for all items!"))
+        LogWriter.instance.tryLog(LogBody(Severity.WARN, "Failed to load h up-time map for all items!"))
         return Pair(Double.NaN, Double.NaN) // check by caller (forced)
     }
 

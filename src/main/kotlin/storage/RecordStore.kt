@@ -10,7 +10,7 @@ import utilities.mergeWith
 import utilities.isValidTime
 import utilities.requireValidRecordTimes
 import logger.LogBody
-import logger.LogLevel
+import model.Severity
 import logger.LogWriter
 import java.sql.Connection
 
@@ -53,7 +53,7 @@ internal class RecordStore(
     }
 
     private fun logRemoved(uid: String, count: Int) {
-        if (count > 0) LogWriter.instance.tryLog(LogBody(LogLevel.WARN, "Date maintenance: removed $count invalid record(s) for uid=$uid"))
+        if (count > 0) LogWriter.instance.tryLog(LogBody(Severity.WARN, "Date maintenance: removed $count invalid record(s) for uid=$uid"))
     }
 
     fun beginImport(): ImportTicket = connection.createStatement().use { sql ->

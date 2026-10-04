@@ -2,12 +2,12 @@ package utilities
 
 import assets.I18nManager
 import core.AuthkeyExpiredException
-import core.ProxyExceptionType
+import model.ProxyExceptionType
 import core.GachaServerConnectionException
 import core.InvalidAuthkeyUrlException
 import core.ProxyException
 import logger.LogBody
-import logger.LogLevel
+import model.Severity
 import logger.LogWriter
 import storage.ImportInvalidatedException
 
@@ -42,7 +42,7 @@ fun Throwable.toUserMessage(): String {
 fun Throwable.safeUserMessage(): String = try {
     toUserMessage()
 } catch (e: Exception) {
-    LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Failed to format user-facing error message", e))
+    LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to format user-facing error message", e))
     I18nManager["error.capture_failed"]
 }
 

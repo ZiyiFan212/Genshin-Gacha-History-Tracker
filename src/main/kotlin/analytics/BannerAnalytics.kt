@@ -10,7 +10,7 @@ import model.GachaRecord
 import model.compareChronologically
 import model.sortedChronologically
 import utilities.AppConstants
-import utilities.AppConstants.GuaranteeType
+import model.GuaranteeType
 import utilities.AppConstants.StandardItemUID
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit

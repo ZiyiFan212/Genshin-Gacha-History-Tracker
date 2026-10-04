@@ -5,35 +5,17 @@ import fetcher.Fetcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import logger.LogBody
-import logger.LogLevel
+import model.Severity
 import logger.LogWriter
 import logger.debug
+import model.CapturePhase
+import model.ProxyExceptionType
 import model.GachaRecord
 import model.sanitizeItemName
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import java.util.UUID
-
-enum class CapturePhase {
-    STARTING,
-    WAITING_FOR_GAME,
-    FETCHING,
-}
-
-enum class ProxyExceptionType {
-    TIMEOUT,
-    PROXY_SCRIPT_FAILED,
-    NO_AUTHKEY,
-    AUTHKEY_EXPIRED,
-    SERVER_CONNECTION,
-    INVALID_AUTHKEY_URL,
-    PROXY_NOT_FOUND,
-    PROXY_START_FAILED,
-    FETCH_FAILED,
-    AUTHKEY_DELIVERY_FAILED,
-    OPERATION_CANCELLED,
-}
 
 private const val PROXY_EXIT_TIMEOUT = 2
 private const val PROXY_EXIT_DELIVERY_FAILED = 3
@@ -102,7 +84,7 @@ class ProxyService {
                 debug("ProxyService: Node exited with code ${proxyProcess.exitValue()}")
                 if (proxyProcess.exitValue() != 0) {
                     val exitCode = proxyProcess.exitValue()
-                    LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Proxy script exited with code $exitCode"))
+                    LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Proxy script exited with code $exitCode"))
                     val error = when (exitCode) {
                         PROXY_EXIT_TIMEOUT -> ProxyExceptionType.TIMEOUT
                         PROXY_EXIT_DELIVERY_FAILED -> ProxyExceptionType.AUTHKEY_DELIVERY_FAILED
@@ -150,13 +132,13 @@ class ProxyService {
                 Thread.currentThread().interrupt()
                 Result.failure(ProxyException(ProxyExceptionType.OPERATION_CANCELLED, cause = e))
             } catch (e: Exception) {
-                LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Unexpected capture error", e))
+                LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Unexpected capture error", e))
                 Result.failure(ProxyException(ProxyExceptionType.FETCH_FAILED, cause = e))
             } finally {
                 try {
                     lifecycle.close()
                 } catch (e: Exception) {
-                    LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Capture cleanup failed; session snapshot retained", e))
+                    LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Capture cleanup failed; session snapshot retained", e))
                 } finally {
                     proxyReceiver.stopServer()
                     fetcher?.close()
@@ -177,12 +159,12 @@ class ProxyService {
             streamProxyDebugOutput(process)
             if (!process.waitFor(30, TimeUnit.SECONDS)) {
                 process.destroyForcibly()
-                LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Session proxy recovery timed out; snapshot retained"))
+                LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Session proxy recovery timed out; snapshot retained"))
             } else if (process.exitValue() != 0) {
-                LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Session proxy recovery failed; snapshot retained"))
+                LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Session proxy recovery failed; snapshot retained"))
             }
         } catch (e: Exception) {
-            LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Failed to recover capture proxy session", e))
+            LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to recover capture proxy session", e))
         }
     }
 

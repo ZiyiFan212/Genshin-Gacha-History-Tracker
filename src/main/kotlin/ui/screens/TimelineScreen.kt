@@ -1,5 +1,7 @@
 package ui.screens
 
+import model.GuaranteeType
+
 import model.TimelineEntry
 import assets.I18nManager
 import assets.ItemTranslator
@@ -86,7 +88,7 @@ private fun TimelineCard(entry: TimelineEntry) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                 )
-                if (entry.guaranteeType != AppConstants.GuaranteeType.NONE) {
+                if (entry.guaranteeType != GuaranteeType.NONE) {
                     Text(
                         guaranteeLabel(entry.guaranteeType),
                         style = MaterialTheme.typography.labelSmall,
@@ -99,11 +101,11 @@ private fun TimelineCard(entry: TimelineEntry) {
     }
 }
 
-private fun guaranteeLabel(type: AppConstants.GuaranteeType): String = when (type) {
-    AppConstants.GuaranteeType.WON_FIFTY_FIFTY -> I18nManager["timeline.won_5050"]
-    AppConstants.GuaranteeType.LOST_FIFTY_FIFTY -> I18nManager["timeline.lost_5050"]
-    AppConstants.GuaranteeType.GUARANTEED -> I18nManager["timeline.guaranteed"]
-    AppConstants.GuaranteeType.STANDARD -> I18nManager["timeline.standard"]
-    AppConstants.GuaranteeType.CAPTURE_RADIANCE -> I18nManager["timeline.capture_radiance"]
-    AppConstants.GuaranteeType.NONE -> ""
+private fun guaranteeLabel(type: GuaranteeType): String = when (type) {
+    GuaranteeType.WON_FIFTY_FIFTY -> I18nManager["timeline.won_5050"]
+    GuaranteeType.LOST_FIFTY_FIFTY -> I18nManager["timeline.lost_5050"]
+    GuaranteeType.GUARANTEED -> I18nManager["timeline.guaranteed"]
+    GuaranteeType.STANDARD -> I18nManager["timeline.standard"]
+    GuaranteeType.CAPTURE_RADIANCE -> I18nManager["timeline.capture_radiance"]
+    GuaranteeType.NONE -> ""
 }

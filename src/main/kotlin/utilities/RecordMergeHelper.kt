@@ -1,7 +1,7 @@
 package utilities
 
 import logger.LogBody
-import logger.LogLevel
+import model.Severity
 import logger.LogWriter
 import model.GachaRecord
 import model.sortedChronologically
@@ -21,7 +21,7 @@ fun requireValidRecordTimes(records: List<GachaRecord>) {
     val invalid = records.filterNot { it.time.isValidTime() }
     if (invalid.isEmpty()) return
     val message = "Rejected entire batch: ${invalid.size} record(s) have invalid date/time"
-    LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, message))
+    LogWriter.instance.tryLog(LogBody(Severity.ERROR, message))
     throw IllegalArgumentException(message)
 }
 

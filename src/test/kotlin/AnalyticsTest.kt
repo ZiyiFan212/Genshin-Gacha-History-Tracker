@@ -1,4 +1,4 @@
-import utilities.AppConstants.GuaranteeType
+import model.GuaranteeType
 import analytics.analyzeLuck
 import analytics.analyzeStreaks
 import analytics.bannerStats
@@ -16,7 +16,7 @@ import kotlinx.coroutines.runBlocking
 import model.GachaRecord
 import utilities.AppBootstrap
 import validation.DataValidator
-import validation.Severity
+import model.Severity
 import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
 import kotlin.test.assertEquals

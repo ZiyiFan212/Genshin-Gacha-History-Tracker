@@ -2,7 +2,9 @@ const mitmproxy = require('node-mitmproxy')
 const http = require('http')
 const path = require('path')
 const os = require('os')
-const { setSystemProxy, debugConsolePrint: printManualProxyInstructions } = require('./systemProxy')
+const { randomUUID } = require('crypto')
+process.env.GENSHIN_PROXY_SESSION ||= randomUUID()
+const { setSystemProxy } = require('./systemProxy')
 
 const KOTLIN_PORT = 3000
 const PROXY_PORT = process.argv[2] || 8080
@@ -31,6 +33,9 @@ function exitCodeForError(err) {
 }
 
 let proxyWasEnabled = false
+let setupPromise = null
+let stopPromise = null
+let shuttingDown = false
 
 const fixAuthkey = (url) => {
     const mr = url.match(/authkey=([^&]+)/)
@@ -41,6 +46,8 @@ const fixAuthkey = (url) => {
 }
 
 const notifyKotlin = (url) => {
+    const token = process.env.GENSHIN_CAPTURE_TOKEN
+    if (!token) return Promise.reject(proxyCaptureError(EXIT.DELIVERY_FAILED, 'Missing capture receiver token'))
     const fixed = fixAuthkey(url)
     const body = JSON.stringify({ url: fixed })
 
@@ -53,6 +60,7 @@ const notifyKotlin = (url) => {
             headers: {
                 'Content-Type': 'application/json',
                 'Content-Length': Buffer.byteLength(body),
+                'X-Capture-Token': token,
             },
         }, (res) => {
             let data = ''
@@ -140,18 +148,19 @@ const startProxy = async (port = PROXY_PORT) => {
 
     try {
         try {
-            await setSystemProxy(true, port)
+            setupPromise = setSystemProxy(true, port)
+            await setupPromise
             proxyWasEnabled = true
         } catch (e) {
             // debug print
             if (e.message === 'MANUAL_PROXY_REQUIRED') {
-                printManualProxyInstructions(port)
+                console.log('[Proxy] Manual proxy setup required! Port: ' + port)
             } else {
-                console.warn('[proxy] System proxy setup failed. Error message: ', e.message)
-                printManualProxyInstructions(port)
+                throw e
             }
         }
 
+        if (shuttingDown) throw new Error('Capture shutdown requested')
         if (!proxyServerPromise) {
             proxyServerPromise = createProxyServer(port)
         }
@@ -171,12 +180,17 @@ const startProxy = async (port = PROXY_PORT) => {
     }
 }
 
-const stopProxy = async () => {
+const stopProxyOnce = async () => {
+    // A shutdown during registry setup must wait until setup/rollback has completed.
+    if (setupPromise) {
+        try { await setupPromise; proxyWasEnabled = true } catch (_) { /* setup rolls back */ }
+        setupPromise = null
+    }
     try {
-        if (proxyStarted && proxyWasEnabled) {
-            console.log('[proxy] Restoring system proxy: disabling capture proxy')
+        if (proxyWasEnabled) {
+            console.log('[proxy] Restoring this capture session proxy settings')
             await setSystemProxy(false)
-            console.log('[proxy] System proxy disabled')
+            console.log('[proxy] Session proxy restoration completed')
             proxyWasEnabled = false
         }
         proxyStarted = false
@@ -197,6 +211,11 @@ const stopProxy = async () => {
         proxyServerPromise = null
         throw e
     }
+}
+
+const stopProxy = () => {
+    if (!stopPromise) stopPromise = stopProxyOnce()
+    return stopPromise
 }
 
 const getCapturedUrl = async (timeoutMs = CAPTURE_TIMEOUT_MS) => {
@@ -248,14 +267,24 @@ const captureAuthkeyViaProxy = async (port = PROXY_PORT) => {
     }
 }
 
-process.on('SIGINT', async () => {
+const shutdown = async () => {
+    if (shuttingDown) return
+    shuttingDown = true
     try {
         await stopProxy()
     } catch (e) {
         console.error('[proxy] Error during cleanup process. Error message: ', e.message)
     }
     process.exit(EXIT.SUCCESS)
-})
+}
+
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGBREAK']) process.on(signal, shutdown)
+
+if (require.main === module && process.env.GENSHIN_PROXY_PARENT_PIPE === '1') {
+    process.stdin.on('end', shutdown)
+    process.stdin.on('error', shutdown)
+    process.stdin.resume()
+}
 
 process.on('uncaughtException', async (err) => {
     console.error('[proxy] Uncaught exception. Error message:', err)

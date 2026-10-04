@@ -7,11 +7,11 @@ import core.TooFrequentRequestException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
-import utilities.LogBody;
+import logger.LogBody;
 import model.GachaRecord;
 import utilities.AppConstants;
-import utilities.LogLevel;
-import utilities.LogWriter;
+import logger.LogLevel;
+import logger.LogWriter;
 
 import java.io.IOException;
 import java.net.URI;

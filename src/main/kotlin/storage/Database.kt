@@ -1,5 +1,7 @@
 package storage
 
+import model.MergeResult
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex

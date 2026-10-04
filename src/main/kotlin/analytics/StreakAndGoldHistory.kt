@@ -1,5 +1,10 @@
 ﻿package analytics
 
+import model.StreakAnalysis
+import model.GoldPullSegment
+import model.CalendarItem
+import model.CalendarDay
+
 import model.GachaRecord
 import model.compareGachaRecordIds
 import model.sortedChronologically
@@ -48,13 +53,6 @@ object TimeCheckForCR {
         return recordTime >= CAPTURE_RADIANCE_START_TIME
     }
 }
-
-// Analysis section for each banner.
-data class StreakAnalysis(
-    val maxConsecutiveUp: Int,
-    val maxConsecutiveLoss: Int,
-    val perBanner: Map<String, Pair<Int, Int>>,
-)
 
 /**
  * 统计各卡池连续不歪（UP）与连续歪的最长 streak。
@@ -138,14 +136,6 @@ private fun shouldIgnore (banner: String): Boolean {
     }
 }
 
-data class GoldPullSegment( val bannerCode: String, val pity: Int, val guaranteeType: GuaranteeType,
-    val itemId: String, val time: String, val recordId: String = "",
-) {
-    val isStandardLoss: Boolean
-        get() = guaranteeType == GuaranteeType.LOST_FIFTY_FIFTY || (bannerCode == AppConstants.WEAPON_EVENT_BANNER
-                && guaranteeType == GuaranteeType.STANDARD)
-}
-
 /**
  * 按照各卡池构造出金历史图表。。
  *
@@ -208,16 +198,6 @@ private fun List<GachaRecord>.buildGoldHistoryForBannerPool(gachaTypes: Set<Stri
         }
     }
     return segments
-}
-
-// 定义一个数据类为日历图标使用
-data class CalendarItem( val itemId: String, val rankType: Int, val itemType: String, val gachaType: String)
-
-// 数据类包含每天的抽数，花费，获得五星四星物品等。
-data class CalendarDay( val date: String, val pullCount: Int, val fiveStars: Int, val fourStars: Int,
-    val items: List<CalendarItem> = emptyList(),
-) {
-    val primogems: Int get() = pullCount * 160
 }
 
 /**

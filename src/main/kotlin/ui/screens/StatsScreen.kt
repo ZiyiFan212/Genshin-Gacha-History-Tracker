@@ -1,11 +1,11 @@
 package ui.screens
 
-import analytics.BannerStats
-import analytics.GoldPullSegment
-import analytics.LuckAnalysis
-import analytics.MonthlyConsumption
-import analytics.PityState
-import analytics.StreakAnalysis
+import model.BannerStats
+import model.GoldPullSegment
+import model.LuckAnalysis
+import model.MonthlyConsumption
+import model.PityState
+import model.StreakAnalysis
 import assets.I18nManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

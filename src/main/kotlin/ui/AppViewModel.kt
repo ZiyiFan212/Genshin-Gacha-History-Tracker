@@ -1,12 +1,12 @@
 package ui
 
-import analytics.BannerStats
-import analytics.LuckAnalysis
-import analytics.MonthlyConsumption
-import analytics.PityState
-import analytics.TimelineEntry
-import analytics.GoldPullSegment
-import analytics.StreakAnalysis
+import model.BannerStats
+import model.LuckAnalysis
+import model.MonthlyConsumption
+import model.PityState
+import model.TimelineEntry
+import model.GoldPullSegment
+import model.StreakAnalysis
 import analytics.analyzeStreaks
 import analytics.buildGoldHistory
 import analytics.analyzeLuck
@@ -50,8 +50,8 @@ import assets.ItemTranslator
 import kotlinx.coroutines.cancel
 import utilities.safeUserMessage
 import validation.DataValidator
-import validation.Severity
-import validation.ValidationReport
+import model.Severity
+import model.ValidationReport
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.path.readText
@@ -85,7 +85,7 @@ data class AppUiState(
     val consumption: List<MonthlyConsumption> = emptyList(),
     val streakAnalysis: StreakAnalysis? = null,
     val goldHistory: Map<String, List<GoldPullSegment>> = emptyMap(),
-    val calendarDays: Map<String, analytics.CalendarDay> = emptyMap(),
+    val calendarDays: Map<String, model.CalendarDay> = emptyMap(),
     val lastImport: ImportResult? = null,
     val isCapturing: Boolean = false,
     val capturePhase: CapturePhase? = null,
@@ -106,7 +106,7 @@ class AppViewModel {
         val bannerStats: List<BannerStats>,
         val timeline: List<TimelineEntry>,
         val goldHistory: Map<String, List<GoldPullSegment>>,
-        val calendarDays: Map<String, analytics.CalendarDay>,
+        val calendarDays: Map<String, model.CalendarDay>,
     )
 
     private fun getAnalyticsAsCache(): AnalyticsCache {
@@ -132,7 +132,7 @@ class AppViewModel {
     val bannerStats: List<BannerStats> get() = getAnalyticsAsCache().bannerStats
     val timeline: List<TimelineEntry> get() = getAnalyticsAsCache().timeline
     val goldHistory: Map<String, List<GoldPullSegment>> get() = getAnalyticsAsCache().goldHistory
-    val calendarDays: Map<String, analytics.CalendarDay> get() = getAnalyticsAsCache().calendarDays
+    val calendarDays: Map<String, model.CalendarDay> get() = getAnalyticsAsCache().calendarDays
 
     private fun invalidateAnalyticsCache() {
         analyticsCache = null

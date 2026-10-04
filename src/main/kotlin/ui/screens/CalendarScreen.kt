@@ -1,7 +1,7 @@
 package ui.screens
 
-import analytics.CalendarDay
-import analytics.CalendarItem
+import model.CalendarDay
+import model.CalendarItem
 import assets.I18nManager
 import assets.ItemTranslator
 import androidx.compose.foundation.background

@@ -1,5 +1,7 @@
 package storage
 
+import model.MergeResult
+
 import analytics.calculateStat
 import model.GachaRecord
 import model.UserStatistics
@@ -13,7 +15,6 @@ import logger.LogWriter
 import java.sql.Connection
 
 class ImportTicket internal constructor(internal val deletionVersion: Long)
-data class MergeResult(val records: List<GachaRecord>, val stats: UserStatistics, val newCount: Int)
 class ImportInvalidatedException : IllegalStateException("Account was deleted during this operation. Start a new import or capture to recreate it.")
 
 /** Call under the connection's mutex. BEGIN IMMEDIATE also serializes other app instances. */

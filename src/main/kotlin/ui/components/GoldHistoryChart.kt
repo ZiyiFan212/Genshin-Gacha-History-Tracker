@@ -1,7 +1,7 @@
 package ui.components
 
-import analytics.GoldPullSegment
-import analytics.PityState
+import model.GoldPullSegment
+import model.PityState
 import analytics.goldHistoryBanners
 import assets.I18nManager
 import assets.ItemTranslator

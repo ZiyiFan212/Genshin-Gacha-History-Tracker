@@ -1,5 +1,11 @@
 package analytics
 
+import model.BannerStats
+import model.PityState
+import model.TimelineEntry
+import model.MonthlyConsumption
+import model.LuckAnalysis
+
 import model.GachaRecord
 import model.compareChronologically
 import model.sortedChronologically
@@ -8,29 +14,6 @@ import utilities.AppConstants.GuaranteeType
 import utilities.AppConstants.StandardItemUID
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
-
-// 数据类用来统计卡池，包含总花销，获得五星等。
-data class BannerStats( val bannerCode: String, val totalWishes: Int, val fourStars: Int, val fiveStars: Int,
-    val winRate: Double, val avgPity: Double, val currentPity: Int, val totalPity: Int)
-
-// 角色+武器池
-data class PityState(
-    val banner301: Int,
-    val banner302: Int,
-    val banner400: Int,
-    val banner500: Int,
-    val banner200: Int
-)
-
-// 每个record的抽数以及状态（通过状态机赋值）
-data class TimelineEntry(val record: GachaRecord, val pityAtPull: Int, val guaranteeType: GuaranteeType)
-
-// 月消耗：总抽数+总原石消耗
-data class MonthlyConsumption(val month: String, val wishes: Int, val primogems: Int)
-
-// 数据类包含抽卡总结
-data class LuckAnalysis( val avgPity: Double, val winRate: Double, val theoreticalAvgPity: Double, val pityLuckScore: Double,
-    val theoreticalWinRate: Double, val winLuckScore: Double, val summary: String)
 
 private val limitedBanners = setOf(AppConstants.CHARACTER_EVENT_BANNER, AppConstants.CHARACTER_EVENT_BANNER2, AppConstants.WEAPON_EVENT_BANNER)
 

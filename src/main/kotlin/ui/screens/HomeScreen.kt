@@ -1,7 +1,7 @@
 package ui.screens
 
-import analytics.PityState
-import analytics.StreakAnalysis
+import model.PityState
+import model.StreakAnalysis
 import assets.I18nManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

@@ -1,6 +1,6 @@
 package ui.screens
 
-import analytics.TimelineEntry
+import model.TimelineEntry
 import assets.I18nManager
 import assets.ItemTranslator
 import androidx.compose.foundation.background

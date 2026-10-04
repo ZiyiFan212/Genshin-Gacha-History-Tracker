@@ -2,6 +2,7 @@
 
 import model.GachaRecord
 import model.compareChronologically
+import utilities.isValidTime
 
 data class ValidationIssue(
     val severity: Severity,
@@ -38,8 +39,8 @@ object DataValidator {
             } else if (!ids.add(record.recordID)) {
                 issues.add(ValidationIssue(Severity.ERROR, "Duplicate record id: ${record.recordID}", record.recordID))
             }
-            if (!record.time.matches("""\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}""".toRegex())) {
-                issues.add(ValidationIssue(Severity.WARN, "Invalid time format: ${record.time}", record.recordID))
+            if (!record.time.isValidTime()) {
+                issues.add(ValidationIssue(Severity.ERROR, "Invalid date/time: ${record.time}", record.recordID))
             }
             if (record.gachaType.isBlank()) {
                 issues.add(ValidationIssue(Severity.WARN, "Missing gacha type", record.recordID))

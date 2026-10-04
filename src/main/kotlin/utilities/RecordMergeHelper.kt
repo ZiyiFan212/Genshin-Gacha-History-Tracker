@@ -1,21 +1,33 @@
 package utilities
 
+import logger.LogBody
+import logger.LogLevel
+import logger.LogWriter
 import model.GachaRecord
 import model.sortedChronologically
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
-fun String?.isDuplicate(uids: List<String>): Boolean {
-    if (this == null) return false
-    return uids.any { it.equals(this, ignoreCase = true) }
-}
+import java.time.format.DateTimeParseException
+import java.time.format.ResolverStyle
 
 fun List<GachaRecord>.mergeWith(localData: List<GachaRecord>): List<GachaRecord> {
+    requireValidRecordTimes(this + localData)
     return (this + localData)
-        .filter { it.time.isValidTime() }
         .distinctBy { it.dedupKey() }
         .sortedChronologically()
 }
+
+fun requireValidRecordTimes(records: List<GachaRecord>) {
+    val invalid = records.filterNot { it.time.isValidTime() }
+    if (invalid.isEmpty()) return
+    val message = "Rejected entire batch: ${invalid.size} record(s) have invalid date/time"
+    LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, message))
+    throw IllegalArgumentException(message)
+}
+
+// strict pattern to ensure no faulty time format
+private val timePattern = """\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}""".toRegex()
+private val strictTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss").withResolverStyle(ResolverStyle.STRICT)
 
 private fun GachaRecord.dedupKey(): String {
     return if (recordID.isNotBlank()) {
@@ -26,9 +38,12 @@ private fun GachaRecord.dedupKey(): String {
 }
 
 fun String?.isValidTime(): Boolean {
-    val pattern = """\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}""".toRegex()
-    if (this == null || !this.matches(pattern)) return false
+    if (this == null || !this.matches(timePattern)) return false
 
-    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-    return runCatching { LocalDateTime.parse(this, formatter) }.isSuccess
+    try {
+        LocalDateTime.parse(this, strictTimeFormatter)
+    } catch (_: DateTimeParseException) {
+        return false
+    }
+    return true
 }

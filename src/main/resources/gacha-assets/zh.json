@@ -193,8 +193,9 @@
   "error": {
     "db_failed": "数据库错误：{msg}",
     "capture_failed": "抓包失败，请重试",
+    "import_invalidated": "任务执行期间该账号已被删除，本次数据未写入。如需恢复账号，请重新发起导入或采集。",
     "capture_timeout": "抓包超时：请启动游戏并打开「祈愿 → 历史记录」后重试",
-    "proxy_script_failed": "代理脚本运行失败，请确认已安装 Node.js 依赖（proxy 目录下 npm install）",
+    "proxy_script_failed": "代理脚本运行失败，请查看日志中的具体原因（例如系统代理配置失败）。",
     "no_authkey": "未能捕获 authkey：请确认游戏已打开「祈愿 → 历史记录」",
     "authkey_expired": "authkey 无效或已过期，请在游戏中重新打开祈愿历史记录",
     "server_connection": "无法连接米哈游服务器，请检查网络后重试",

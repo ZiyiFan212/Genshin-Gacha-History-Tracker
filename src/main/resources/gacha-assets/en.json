@@ -193,8 +193,9 @@
   "error": {
     "db_failed": "Database error: {msg}",
     "capture_failed": "Capture failed. Please try again.",
+    "import_invalidated": "This account was deleted while the operation was running. To recreate it, start a new import or capture.",
     "capture_timeout": "Capture timed out. Launch the game and open Wish → History, then retry.",
-    "proxy_script_failed": "Proxy script failed. Ensure Node.js dependencies are installed (npm install in proxy/).",
+    "proxy_script_failed": "Proxy script failed. Check the logs for the specific cause, such as a system proxy configuration error.",
     "no_authkey": "No authkey captured. Open Wish → History in-game and try again.",
     "authkey_expired": "Authkey is invalid or expired. Open wish history in-game again.",
     "server_connection": "Could not reach miHoYo servers. Check your network and retry.",

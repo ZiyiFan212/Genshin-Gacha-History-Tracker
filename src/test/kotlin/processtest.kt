@@ -1,8 +1,8 @@
 ﻿import model.GachaRecord
 import model.parseJson
 import analytics.calculateStat
-import utilities.findLatestJson
-import utilities.validate
+import validation.findLatestJson
+import validation.validate
 import java.nio.file.Path
 import kotlin.io.path.readText
 import kotlin.test.Test

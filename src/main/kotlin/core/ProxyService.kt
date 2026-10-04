@@ -4,15 +4,16 @@ import assets.ItemTranslator
 import fetcher.Fetcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import utilities.LogBody
-import utilities.LogLevel
-import utilities.LogWriter
-import utilities.debug
+import logger.LogBody
+import logger.LogLevel
+import logger.LogWriter
+import logger.debug
 import model.GachaRecord
 import model.sanitizeItemName
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import java.util.UUID
 
 enum class CapturePhase {
     STARTING,
@@ -55,8 +56,10 @@ class ProxyService {
 
         return withContext(Dispatchers.IO) {
             val proxyReceiver = ProxyReceiver()
+            val sessionId = UUID.randomUUID().toString()
             var proxyProcess: Process? = null
             var fetcher: Fetcher? = null
+            val lifecycle = ProxyLifecycle({ recoverProxySession(sessionId) })
 
             try {
                 onPhase(CapturePhase.STARTING)
@@ -74,10 +77,14 @@ class ProxyService {
                 }
 
                 proxyProcess = try {
-                    ProcessBuilder(nodeExe, proxyScript.absolutePath, "8080")
+                    lifecycle.start(ProcessBuilder(nodeExe, proxyScript.absolutePath, "8080")
                         .directory(File(System.getProperty("user.dir")))
-                        .redirectErrorStream(true)
-                        .start()
+                        .apply {
+                            environment()["GENSHIN_PROXY_SESSION"] = sessionId
+                            environment()["GENSHIN_CAPTURE_TOKEN"] = proxyReceiver.getAuthToken()
+                            environment()["GENSHIN_PROXY_PARENT_PIPE"] = "1"
+                        }
+                        .redirectErrorStream(true))
                 } catch (e: IOException) {
                     return@withContext Result.failure(ProxyException(ProxyExceptionType.PROXY_START_FAILED, cause = e))
                 }
@@ -89,7 +96,6 @@ class ProxyService {
                 val finished = proxyProcess.waitFor(120, TimeUnit.SECONDS)
                 if (!finished) {
                     debug("ProxyService: Node exit timed out; URL received=${proxyReceiver.getCapturedAuthKeyUrl() != null}")
-                    proxyProcess.destroyForcibly()
                     return@withContext Result.failure(ProxyException(ProxyExceptionType.TIMEOUT))
                 }
 
@@ -147,101 +153,36 @@ class ProxyService {
                 LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Unexpected capture error", e))
                 Result.failure(ProxyException(ProxyExceptionType.FETCH_FAILED, cause = e))
             } finally {
-                fetcher?.close()
-                /**
-                 * We have to ensure that the proxy server is destroyed despite the lauching process is
-                 * disruppted or failed. Otherwise, the proxy server will be kept on and blocking the
-                 * network.
-                 * Here we terminate the process and its children process.
-                 */
-                proxyReceiver.stopServer()
-                proxyProcess?.destroy()
-                proxyProcess?.destroyForcibly()
-                proxyProcess?.descendants()?.forEach { it.destroyForcibly() }
-                resetSystemProxy()
-
-                System.clearProperty("http.proxyHost")
-                System.clearProperty("http.proxyPort")
-                System.clearProperty("https.proxyHost")
-                System.clearProperty("https.proxyPort")
-                java.net.ProxySelector.setDefault(null)
-            }
-        }
-    }
-
-    /**
-     * Running a script to reset the system proxy, as capturing records open a local
-     * proxy server at port 8080.
-     *
-     *  - Not cleanup will cause apps such as Microsoft Edge unable to connect to the
-     *  internet. Since interrupting the user's normal usage is not what we plan, having more
-     *  backups is essentially important.
-     *
-     *  - If this script fail, another cleanup script [cleanup.js] will forcibly
-     *  shut off the proxy server by editing the registry table (on Windows OS).
-     */
-    private fun resetSystemProxy() {
-        val cleanupScript = File(System.getProperty("user.dir"), "proxy/cleanup.js")
-        
-        try {
-            val systemProxyScript = File(System.getProperty("user.dir"), "proxy/systemProxy.js")
-            if (systemProxyScript.isFile) {
-                val script = """
-                    const { setSystemProxy } = require('./proxy/systemProxy');
-                    (async () => {
-                        try {
-                            await setSystemProxy(false);
-                        } catch (e) {
-                            process.exit(1);
-                        }
-                    })();
-                """.trimIndent()
-                
-                val scriptProcess = ProcessBuilder(nodeExe, "-e", script)
-                    .directory(File(System.getProperty("user.dir")))
-                    .redirectErrorStream(true)
-                    .start()
-                
-                val completed = scriptProcess.waitFor(5, TimeUnit.SECONDS)
-                if (!completed) {
-                    scriptProcess.destroyForcibly()
-                    LogWriter.instance.tryLog(LogBody(LogLevel.WARN, "System proxy cleanup process timed out, trying cleanup script"))
-                    runCleanupScript(cleanupScript)
-                } else if (scriptProcess.exitValue() != 0) {
-                    LogWriter.instance.tryLog(LogBody(LogLevel.WARN, "System proxy cleanup script failed with exit code ${scriptProcess.exitValue()}, trying cleanup script"))
-                    runCleanupScript(cleanupScript)
+                try {
+                    lifecycle.close()
+                } catch (e: Exception) {
+                    LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Capture cleanup failed; session snapshot retained", e))
+                } finally {
+                    proxyReceiver.stopServer()
+                    fetcher?.close()
                 }
-            } else {
-                LogWriter.instance.tryLog(LogBody(LogLevel.WARN, "systemProxy.js not found, using cleanup script directly"))
-                runCleanupScript(cleanupScript)
+
             }
-        } catch (e: Exception) {
-            LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Failed to cleanup proxy via system script", e))
-            runCleanupScript(cleanupScript)
         }
     }
 
-    private fun runCleanupScript(cleanupScript: File) {
-        if (!cleanupScript.isFile) {
-            LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Cleanup script not found: ${cleanupScript.absolutePath}"))
-            return
-        }
-        
+    private fun recoverProxySession(sessionId: String) {
+        val sessionScript = File(System.getProperty("user.dir"), "proxy/windowsProxySession.js")
         try {
-            val process = ProcessBuilder(nodeExe, cleanupScript.absolutePath, "8080")
+            val process = ProcessBuilder(nodeExe, sessionScript.absolutePath)
                 .directory(File(System.getProperty("user.dir")))
+                .apply { environment()["GENSHIN_PROXY_SESSION"] = sessionId }
                 .redirectErrorStream(true)
                 .start()
-            
-            val completed = process.waitFor(5, TimeUnit.SECONDS)
-            if (!completed) {
+            streamProxyDebugOutput(process)
+            if (!process.waitFor(30, TimeUnit.SECONDS)) {
                 process.destroyForcibly()
-                LogWriter.instance.tryLog(LogBody(LogLevel.WARN, "Cleanup script timed out"))
+                LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Session proxy recovery timed out; snapshot retained"))
             } else if (process.exitValue() != 0) {
-                LogWriter.instance.tryLog(LogBody(LogLevel.WARN, "Cleanup script failed with exit code ${process.exitValue()}"))
+                LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Session proxy recovery failed; snapshot retained"))
             }
         } catch (e: Exception) {
-            LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Failed to run cleanup script", e))
+            LogWriter.instance.tryLog(LogBody(LogLevel.ERROR, "Failed to recover capture proxy session", e))
         }
     }
 

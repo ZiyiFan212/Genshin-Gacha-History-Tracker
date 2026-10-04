@@ -1,4 +1,4 @@
-package utilities
+package utilities.preference
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

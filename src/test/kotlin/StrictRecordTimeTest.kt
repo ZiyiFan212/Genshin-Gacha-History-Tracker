@@ -1,6 +1,6 @@
 import model.GachaRecord
-import utilities.isValidTime
-import utilities.mergeWith
+import utilities.records.isValidTime
+import utilities.records.mergeWith
 import validation.DataValidator
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -24,7 +24,7 @@ class StrictRecordTimeTest {
         for ((time, valid) in cases) {
             val record = GachaRecord("301", time, "Test", "weapon", "11301", "1", 3)
             assertEquals(valid, time.isValidTime(), time)
-            assertEquals(!valid, DataValidator.validate(listOf(record), "123").hasErrors, time)
+            assertEquals(!valid, DataValidator.validate(listOf(record), "123456789").hasErrors, time)
             if (valid) assertEquals(time, listOf(record).mergeWith(emptyList()).single().time)
             else assertFailsWith<IllegalArgumentException>(time) { listOf(record).mergeWith(emptyList()) }
         }

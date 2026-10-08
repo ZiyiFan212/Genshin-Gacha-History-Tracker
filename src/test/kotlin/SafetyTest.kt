@@ -9,7 +9,7 @@ import model.parseJson
 import utilities.AppBootstrap
 import utilities.preference.PreferencesManager
 import analytics.calculateStat
-import utilities.mergeWith
+import utilities.records.mergeWith
 import validation.validate
 import java.nio.file.Files
 import kotlin.io.path.createTempDirectory

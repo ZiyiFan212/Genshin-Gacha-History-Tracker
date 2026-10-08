@@ -1,10 +1,9 @@
-package utilities
+package utilities.records
 
 import logger.LogBody
 import model.Severity
 import logger.LogWriter
 import model.GachaRecord
-import model.sortedChronologically
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException

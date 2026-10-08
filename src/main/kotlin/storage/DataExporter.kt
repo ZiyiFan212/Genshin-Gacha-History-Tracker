@@ -10,7 +10,8 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import model.GachaRecord
-import model.sortedChronologicallyDescending
+import utilities.records.sortedChronologicallyDescending
+import validation.uidValidationError
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -28,6 +29,7 @@ object CsvExporter : GachaExporter {
 
     override fun export(records: List<GachaRecord>, uid: String, path: Path, ignoreThreeStar: Boolean): Result<Path> =
         runCatching {
+            val file = resolveFile(path, uid, fileExtension)
             val filtered = if (ignoreThreeStar) records.filter { it.rankType >= 4 } else records
             val header = listOf(
                 I18nManager["export.csv_time"],
@@ -51,7 +53,6 @@ object CsvExporter : GachaExporter {
                     name,
                 ).joinToString(",") { field -> "\"${field.toString().replace("\"", "\"\"")}\"" }
             }
-            val file = resolveFile(path, uid, fileExtension)
             Files.createDirectories(file.parent)
             file.toFile().writeText("$header\n$rows")
             file
@@ -64,6 +65,7 @@ object HtmlExporter : GachaExporter {
 
     override fun export(records: List<GachaRecord>, uid: String, path: Path, ignoreThreeStar: Boolean): Result<Path> =
         runCatching {
+            val file = resolveFile(path, uid, fileExtension)
             val filtered = if (ignoreThreeStar) records.filter { it.rankType >= 4 } else records
             val sorted = filtered.sortedChronologicallyDescending()
 
@@ -184,9 +186,6 @@ object HtmlExporter : GachaExporter {
 </body></html>
             """.trimIndent()
 
-            val file = if (Files.isDirectory(path)) {
-                path.resolve("Gacha_${uid}_${Instant.now().epochSecond}.html")
-            } else path
             Files.createDirectories(file.parent)
             file.toFile().writeText(html)
             file
@@ -202,7 +201,7 @@ object UigfExporter : GachaExporter {
     private val json = Json {
         prettyPrint = true; encodeDefaults = true
     }
-    override val fileExtension: String = ".json"
+    override val fileExtension: String = "json"
 
     // UIGF v3 info data class for serialization, follow the standard format.
     // see: https://uigf.org/en/standards/uigf-legacy-v3.0.html
@@ -279,6 +278,7 @@ object UigfExporter : GachaExporter {
         require(language in setOf("zh-cn", "en-us")) { "Unsupported export language: $language" }
         require(regionTimeZone in -12..14) { "Invalid server timezone: $regionTimeZone" }
 
+        val outputFile = resolveFile(path, pair.first, fileExtension, version)
         val exportedAt = Instant.now()
         val finalJsonMap: JsonObject = if (version == "v3.0") {
             val v3infoObj = json.encodeToJsonElement(UigfV3Info(
@@ -295,7 +295,7 @@ object UigfExporter : GachaExporter {
                         gachaType = record.gachaType,
                         time = record.time,
                         name = ItemTranslator.getExportName(record.itemID, language) ?: record.name,
-                        itemType = typeNameSanitizer(record.itemType, language),
+                        itemType = typeNameTranslator(record.itemType, language),
                         itemId = record.itemID,
                         rankType = record.rankType.toString(),
                         id = record.recordID,
@@ -315,7 +315,7 @@ object UigfExporter : GachaExporter {
                 gachaType = record.gachaType,
                 time = record.time,
                 name = ItemTranslator.getExportName(record.itemID, language) ?: record.name,
-                itemType = typeNameSanitizer(record.itemType, language),
+                itemType = typeNameTranslator(record.itemType, language),
                 itemId = record.itemID,
                 rankType = record.rankType.toString(),
                 id = record.recordID
@@ -332,7 +332,6 @@ object UigfExporter : GachaExporter {
         }
 
         val jsonStr = json.encodeToString(JsonObject.serializer(), finalJsonMap)
-        val outputFile = resolveExportFile(path, pair.first, version)
         outputFile.toAbsolutePath().parent?.let(Files::createDirectories)
         outputFile.toFile().writeText(jsonStr)
         outputFile
@@ -349,25 +348,31 @@ object UigfExporter : GachaExporter {
     }
 
     // sanitize the name based on the user's current language choice.
-    private fun typeNameSanitizer(input: String, lang: String): String =
+    private fun typeNameTranslator(input: String, lang: String): String =
         when (input.lowercase()) {
             "角色", "character" -> if (lang == "zh-cn") "角色" else "Character"
             "武器", "weapon" -> if (lang == "zh-cn") "武器" else "Weapon"
             else -> input
         }
 
-    private fun resolveExportFile(path: Path, uid: String, version: String): Path {
-        return if (Files.isDirectory(path)) {
-            val fileName = "UIGF_${version}_${uid}_${DateTimeFormatter.ofPattern("yyyyMMddHHmm").withZone(ZoneOffset.UTC).format(Instant.now())}${fileExtension}"
-            path.resolve(fileName)
-        } else {
-            path
-        }
-    }
 }
 
-fun resolveFile(path: Path, uid: String, fileType: String): Path {
-    return if (Files.isDirectory(path)) {
-        path.resolve("Gacha_${uid}_${Instant.now().epochSecond}.$fileType")
-    } else path
+/** Resolve generated names inside the directory, while allowing an explicit output file. */
+private fun resolveFile(path: Path, uid: String, fileType: String, version: String? = null): Path {
+    val uidError = uidValidationError(uid)
+    require(uidError == null) { uidError ?: "Invalid UID" }
+
+    val base = path.toAbsolutePath().normalize()
+    if (!Files.isDirectory(base)) return base
+
+    val fileName = if (version == null) {
+        "Gacha_${uid}_${Instant.now().epochSecond}.$fileType"
+    } else {
+        val timestamp = DateTimeFormatter.ofPattern("yyyyMMddHHmm")
+            .withZone(ZoneOffset.UTC).format(Instant.now())
+        "UIGF_${version}_${uid}_${timestamp}.$fileType"
+    }
+    val target = base.resolve(fileName).normalize()
+    require(target.startsWith(base) && target != base) { "Export path escapes the directory" }
+    return target
 }

@@ -1,20 +1,20 @@
-﻿package validation
+package validation
 
 import model.ValidationIssue
 import model.ValidationReport
 import model.Severity
 
 import model.GachaRecord
-import model.compareChronologically
-import utilities.isValidTime
+import utilities.records.compareChronologically
+import utilities.records.isValidTime
 
 object DataValidator {
 
     fun validate(records: List<GachaRecord>, uid: String): ValidationReport {
         val issues = mutableListOf<ValidationIssue>()
 
-        if (uid.isBlank()) {
-            issues.add(ValidationIssue(Severity.ERROR, "UID is empty"))
+        uidValidationError(uid)?.let { message ->
+            issues.add(ValidationIssue(Severity.ERROR, message))
         }
         if (records.isEmpty()) {
             issues.add(ValidationIssue(Severity.ERROR, "No gacha records found"))
@@ -45,4 +45,5 @@ object DataValidator {
 
         return ValidationReport(issues)
     }
+
 }

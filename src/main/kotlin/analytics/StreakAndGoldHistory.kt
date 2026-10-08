@@ -6,8 +6,8 @@ import model.CalendarItem
 import model.CalendarDay
 
 import model.GachaRecord
-import model.compareGachaRecordIds
-import model.sortedChronologically
+import utilities.records.compareGachaRecordIds
+import utilities.records.sortedChronologically
 import utilities.AppConstants
 import model.GuaranteeType
 import model.PullOutcome

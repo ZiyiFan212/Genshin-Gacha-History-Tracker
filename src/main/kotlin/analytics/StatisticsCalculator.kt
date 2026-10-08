@@ -3,7 +3,7 @@ package analytics
 import assets.UpTimeLoader
 import model.GachaRecord
 import model.UserStatistics
-import model.sortedChronologically
+import utilities.records.sortedChronologically
 import utilities.AppConstants
 import utilities.AppConstants.StandardItemUID
 import model.PullOutcome

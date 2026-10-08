@@ -221,7 +221,7 @@ class ValidationExportTest {
 
     @Test
     fun `validator detects duplicate ids`() {
-        val report = DataValidator.validate(listOf(sample, sample.copy(name = "Dup")), "123")
+        val report = DataValidator.validate(listOf(sample, sample.copy(name = "Dup")), "123456789")
         assertTrue(report.hasErrors)
         assertTrue(report.issues.any { it.severity == Severity.ERROR })
     }
@@ -229,7 +229,7 @@ class ValidationExportTest {
     @Test
     fun `csv export creates file`() {
         val dir = createTempDirectory("csv-test")
-        val result = CsvExporter.export(listOf(sample), "123", dir)
+        val result = CsvExporter.export(listOf(sample), "123456789", dir)
         assertTrue(result.isSuccess)
         assertTrue(result.getOrThrow().toFile().exists())
     }
@@ -237,7 +237,7 @@ class ValidationExportTest {
     @Test
     fun `html export creates file`() {
         val dir = createTempDirectory("html-test")
-        val result = HtmlExporter.export(listOf(sample), "123", dir)
+        val result = HtmlExporter.export(listOf(sample), "123456789", dir)
         assertTrue(result.isSuccess)
         assertTrue(result.getOrThrow().toFile().readText().contains("2024-01-01"))
     }

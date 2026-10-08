@@ -7,8 +7,8 @@ import model.MonthlyConsumption
 import model.LuckAnalysis
 
 import model.GachaRecord
-import model.compareChronologically
-import model.sortedChronologically
+import utilities.records.compareChronologically
+import utilities.records.sortedChronologically
 import utilities.AppConstants
 import model.GuaranteeType
 import utilities.AppConstants.StandardItemUID

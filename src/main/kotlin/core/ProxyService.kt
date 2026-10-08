@@ -11,7 +11,7 @@ import logger.debug
 import model.CapturePhase
 import model.ProxyExceptionType
 import model.GachaRecord
-import model.sanitizeItemName
+import utilities.records.sanitizeItemName
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit

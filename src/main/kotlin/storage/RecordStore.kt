@@ -6,9 +6,9 @@ import analytics.calculateStat
 import model.GachaRecord
 import model.UserStatistics
 import model.customizeJson
-import utilities.mergeWith
-import utilities.isValidTime
-import utilities.requireValidRecordTimes
+import utilities.records.mergeWith
+import utilities.records.isValidTime
+import utilities.records.requireValidRecordTimes
 import logger.LogBody
 import model.Severity
 import logger.LogWriter

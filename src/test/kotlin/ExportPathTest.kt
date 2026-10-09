@@ -32,7 +32,7 @@ class ExportPathTest {
                 " 123456789", "123456789\n", "１２３４５６７８９") +
                 "<>:\"/\\|?*".map { "1234${it}6789" }
             for (uid in invalid) {
-                assertTrue(DataValidator.validate(records, uid).hasErrors, uid)
+                assertTrue(DataValidator.validate(records, uid) { true }.hasErrors, uid)
                 for (export in exporters) {
                     for (path in listOf(directory, explicit)) {
                         val result = export(uid, path)
@@ -52,7 +52,7 @@ class ExportPathTest {
         val root = createTempDirectory("export-valid-")
         try {
             for (uid in listOf("123456789", "1234567890")) {
-                assertFalse(DataValidator.validate(records, uid).hasErrors)
+                assertFalse(DataValidator.validate(records, uid) { true }.hasErrors)
                 exporters.forEachIndexed { index, export ->
                     val file = export(uid, root.resolve("unused").resolve("..")).getOrThrow()
                     assertEquals(root.toAbsolutePath().normalize(), file.parent)

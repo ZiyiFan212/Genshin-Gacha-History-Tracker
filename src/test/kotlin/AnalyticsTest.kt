@@ -221,7 +221,7 @@ class ValidationExportTest {
 
     @Test
     fun `validator detects duplicate ids`() {
-        val report = DataValidator.validate(listOf(sample, sample.copy(name = "Dup")), "123456789")
+        val report = DataValidator.validate(listOf(sample, sample.copy(name = "Dup")), "123456789") { true }
         assertTrue(report.hasErrors)
         assertTrue(report.issues.any { it.severity == Severity.ERROR })
     }

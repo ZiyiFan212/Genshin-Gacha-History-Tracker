@@ -190,7 +190,7 @@ class AppViewModel {
                     BackupManager.backupBeforeImport().getOrThrow()
                     val json = path.readText()
                     val (uid, imported) = parseJson(json).getOrThrow()
-                    val validation = DataValidator.validate(imported, uid)
+                    val validation = DataValidator.validate(imported, uid, ItemTranslator::containsId)
                     if (validation.hasErrors) {
                         throw IllegalStateException(
                             validation.issues.first { it.severity == Severity.ERROR }.message
@@ -240,7 +240,7 @@ class AppViewModel {
                         val (uid, imported) = proxyService.captureGachaRecords(
                             onPhase = { phase -> UiState.update { it.copy(capturePhase = phase) } },
                         ).getOrThrow()
-                        val validation = DataValidator.validate(imported, uid)
+                        val validation = DataValidator.validate(imported, uid, ItemTranslator::containsId)
                         if (validation.hasErrors) {
                             throw IllegalStateException(
                                 validation.issues.first { it.severity == Severity.ERROR }.message
@@ -432,7 +432,7 @@ class AppViewModel {
         scope.launch {
             withContext(Dispatchers.IO) {
                 Database.updateRecords(uid) { records ->
-                    records.map { it.copy(itemID = ItemTranslator.getIdByName(it.name)) }
+                    records.map { it.copy(itemID = ItemTranslator.getIdByName(it.name).ifBlank { it.itemID }) }
                 }.onSuccess {
                     if (UiState.value.selectedUid == uid) loadUid(uid)
                 }.onFailure { e ->

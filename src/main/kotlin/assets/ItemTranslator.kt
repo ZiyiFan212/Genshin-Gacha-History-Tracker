@@ -53,6 +53,11 @@ object ItemTranslator {
         }
     }
 
+    fun containsId(id: String): Boolean {
+        check(initialized) { "ItemTranslator has not been loaded" }
+        return itemTranslationMap.containsKey(id)
+    }
+
     fun getIdByName(name: String): String {
         check(initialized) { "ItemTranslator has not been loaded" }
         return nameToIdMap[name] ?: ""

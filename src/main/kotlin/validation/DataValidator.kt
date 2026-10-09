@@ -5,14 +5,15 @@ import model.ValidationReport
 import model.Severity
 
 import model.GachaRecord
+import utilities.AppConstants
 import utilities.records.compareChronologically
-import utilities.records.isValidTime
 
 object DataValidator {
 
-    fun validate(records: List<GachaRecord>, uid: String): ValidationReport {
+    fun validate(records: List<GachaRecord>, uid: String, isKnownItem: (String) -> Boolean): ValidationReport {
         val issues = mutableListOf<ValidationIssue>()
 
+        // validate UID, returning error
         uidValidationError(uid)?.let { message ->
             issues.add(ValidationIssue(Severity.ERROR, message))
         }
@@ -22,16 +23,40 @@ object DataValidator {
 
         val ids = mutableSetOf<String>()
         records.forEach { record ->
-            if (record.recordID.isBlank()) {
-                issues.add(ValidationIssue(Severity.WARN, "Record missing id at ${record.time}", null))
+            // validate record and remove dups
+            val recordIdError = recordIdValidationError(record.recordID)
+            if (recordIdError != null) {
+                issues.add(ValidationIssue(Severity.ERROR, recordIdError, record.recordID))
             } else if (!ids.add(record.recordID)) {
                 issues.add(ValidationIssue(Severity.ERROR, "Duplicate record id: ${record.recordID}", record.recordID))
             }
+
+            // time and rank type validation, must return Severity.ERROR as it should NOT be included.
             if (!record.time.isValidTime()) {
                 issues.add(ValidationIssue(Severity.ERROR, "Invalid date/time: ${record.time}", record.recordID))
             }
-            if (record.gachaType.isBlank()) {
-                issues.add(ValidationIssue(Severity.WARN, "Missing gacha type", record.recordID))
+            if (record.rankType !in 3..5){
+                issues.add(ValidationIssue(Severity.ERROR, "Invalid rank type: ${record.rankType}", record.recordID))
+            }
+
+            if (record.gachaType.isBlank() || !AppConstants.BannerCodeList.contains(record.gachaType)) {
+                issues.add(ValidationIssue(Severity.ERROR, "Invalid gacha type ${record.gachaType}", record.recordID))
+            }
+
+            // item ID validation. Note that it can be WARN!! because json may not be up-to-date
+            val itemIdError = itemIdValidationError(record.itemID)
+            if (itemIdError != null) {
+                issues.add(ValidationIssue(Severity.ERROR, itemIdError, record.recordID))
+            } else if (!isKnownItem(record.itemID)) {
+                issues.add(ValidationIssue(Severity.WARN, "Unknown item ID: ${record.itemID}", record.recordID))
+            }
+
+            val expectedUigfType = if (record.gachaType == AppConstants.CHARACTER_EVENT_BANNER2)
+                AppConstants.CHARACTER_EVENT_BANNER else record.gachaType
+            if (record.uigfGachaType != expectedUigfType) {
+                issues.add(ValidationIssue(Severity.ERROR,
+                    "Incompatible UIGF gacha type: ${record.uigfGachaType}; expected $expectedUigfType for ${record.gachaType}",
+                    record.recordID))
             }
         }
 

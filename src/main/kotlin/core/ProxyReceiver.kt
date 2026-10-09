@@ -113,6 +113,10 @@ class ProxyReceiver(private val port: Int = 3000, private val requestTimeoutMs: 
         }
     }
 
+    fun getCapturedAuthKeyUrl(): String? = captured.get()
+
+    fun clearCapturedAutoKeyUrl() { captured.set(null) }
+
     // Receiving the URL from the socket. Validating and storing in the session.
     private fun handleRequest(socket: Socket, expectedToken: ByteArray, sessionCapture: AtomicReference<String?>) {
         try {
@@ -130,10 +134,10 @@ class ProxyReceiver(private val port: Int = 3000, private val requestTimeoutMs: 
                 if (tail == 0x0d0a0d0a) break
             }
 
-            // First validate caught bytes
+            // First validate caught bytes, if it not any HTTP protocol, reject.
             val lines = header.toString(StandardCharsets.ISO_8859_1).split("\r\n")
             val request = lines.first().split(' ')
-            if (request.size != 3 || request[2] !in setOf("HTTP/1.0", "HTTP/1.1")) return respond(socket, 400)
+            if (request.size != 3 || (request[2] != "HTTP/1.0" && request[2] != "HTTP/1.1")) return respond(socket, 400)
             if (request[0] != "POST") return respond(socket, 405)
             if (request[1] != "/authkey") return respond(socket, 404)
 
@@ -178,10 +182,6 @@ class ProxyReceiver(private val port: Int = 3000, private val requestTimeoutMs: 
         val response = "HTTP/1.1 $status Result\r\nConnection: close\r\nContent-Type: text/plain\r\nContent-Length: ${body.length}\r\n\r\n$body"
         socket.getOutputStream().write(response.toByteArray(StandardCharsets.US_ASCII))
     }
-
-    fun getCapturedAuthKeyUrl(): String? = captured.get()
-
-    fun clearCapturedAutoKeyUrl() { captured.set(null) }
 
     internal companion object {
         const val MAX_BODY_BYTES = 16 * 1024

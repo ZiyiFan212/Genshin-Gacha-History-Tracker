@@ -35,7 +35,6 @@ class ProxyService {
      */
     suspend fun captureGachaRecords(onPhase: (CapturePhase) -> Unit = {}):
             Result<Pair<String, List<GachaRecord>>> {
-
         return withContext(Dispatchers.IO) {
             val proxyReceiver = ProxyReceiver()
             val sessionId = UUID.randomUUID().toString()
@@ -47,17 +46,20 @@ class ProxyService {
                 onPhase(CapturePhase.STARTING)
                 proxyReceiver.clearCapturedAutoKeyUrl()
 
+                // Locating the proxy script and launch the listening server
                 val proxyScript = NodeLocator.resolveProxyScriptPath()
                 if (!proxyScript.isFile) {
                     return@withContext Result.failure(ProxyException(ProxyExceptionType.PROXY_NOT_FOUND))
                 }
-
                 try {
                     proxyReceiver.startServer()
                 } catch (e: Exception) {
                     return@withContext Result.failure(ProxyException(ProxyExceptionType.PROXY_START_FAILED, cause = e))
                 }
 
+                // We need to start a process to running the js server
+                // As soon as the raw URL is caught, the server returns it via ProxyRecevier and validate.
+                // If timeout, cleanup everything and return the message
                 proxyProcess = try {
                     lifecycle.start(ProcessBuilder(nodeExe, proxyScript.absolutePath, "8080")
                         .directory(File(System.getProperty("user.dir")))
@@ -81,7 +83,8 @@ class ProxyService {
                     return@withContext Result.failure(ProxyException(ProxyExceptionType.TIMEOUT))
                 }
 
-                debug("ProxyService: Node exited with code ${proxyProcess.exitValue()}")
+                // Both js and kotlin side follow the same contract, which rules the returning value.
+                // Check ProxyService.kt and proxy.js, if needed.
                 if (proxyProcess.exitValue() != 0) {
                     val exitCode = proxyProcess.exitValue()
                     LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Proxy script exited with code $exitCode"))
@@ -96,13 +99,13 @@ class ProxyService {
                 val authKeyURL = proxyReceiver.getCapturedAuthKeyUrl()
                     ?: return@withContext Result.failure(ProxyException(ProxyExceptionType.NO_AUTHKEY))
 
+                // As soon as the URL is caught, we pass it to Java.
+                // URL will be processed to clean query, and used for requesting.
                 onPhase(CapturePhase.FETCHING)
-                debug("ProxyService: creating Fetcher")
                 fetcher = Fetcher(authKeyURL)
                 debug("ProxyService: Fetcher initialized; query preparation completed")
 
                 val javaRecords = try {
-                    debug("ProxyService: calling Fetcher.getAllRecords()")
                     fetcher.getAllRecords()
                 } catch (e: IOException) {
                     return@withContext Result.failure(ProxyException(ProxyExceptionType.SERVER_CONNECTION, cause = e))
@@ -113,14 +116,14 @@ class ProxyService {
                      * Since Mihoyo doesn't send back the item ID, we need to create the Name -> ID map [ItemTranslator.buildNameToIdMap].
                      * Now, each item has its corresponding ID.
                      * */
-                    val itemId = ItemTranslator.getIdByName(record.name)
+                    val itemId = ItemTranslator.getIdByName(record.name).ifBlank { record.itemID }
                     record.copy(
                         itemID = itemId,
                         itemType = record.sanitizeItemName()
                     )
                 }
 
-                debug("ProxyService: fetch completed; records=${records.size}, UID present=${fetcher.getUid().isNotBlank()}")
+                debug("ProxyService: fetch completed; records=${records.size}, UID present=${fetcher.uid.isNotBlank()}")
                 Result.success(fetcher.getUid() to records)
             } catch (e: AuthkeyExpiredException) {
                 Result.failure(ProxyException(ProxyExceptionType.AUTHKEY_EXPIRED, cause = e))

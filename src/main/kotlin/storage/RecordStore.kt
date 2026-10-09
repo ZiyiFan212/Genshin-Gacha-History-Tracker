@@ -7,7 +7,7 @@ import model.GachaRecord
 import model.UserStatistics
 import model.customizeJson
 import utilities.records.mergeWith
-import utilities.records.isValidTime
+import validation.isValidTime
 import utilities.records.requireValidRecordTimes
 import logger.LogBody
 import model.Severity

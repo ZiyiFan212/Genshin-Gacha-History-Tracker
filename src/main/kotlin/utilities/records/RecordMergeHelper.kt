@@ -4,10 +4,7 @@ import logger.LogBody
 import model.Severity
 import logger.LogWriter
 import model.GachaRecord
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
-import java.time.format.ResolverStyle
+import validation.isValidTime
 
 fun List<GachaRecord>.mergeWith(localData: List<GachaRecord>): List<GachaRecord> {
     requireValidRecordTimes(this + localData)
@@ -24,9 +21,6 @@ fun requireValidRecordTimes(records: List<GachaRecord>) {
     throw IllegalArgumentException(message)
 }
 
-// strict pattern to ensure no faulty time format
-private val timePattern = """\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}""".toRegex()
-private val strictTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss").withResolverStyle(ResolverStyle.STRICT)
 
 private fun GachaRecord.dedupKey(): String {
     return if (recordID.isNotBlank()) {
@@ -36,13 +30,3 @@ private fun GachaRecord.dedupKey(): String {
     }
 }
 
-fun String?.isValidTime(): Boolean {
-    if (this == null || !this.matches(timePattern)) return false
-
-    try {
-        LocalDateTime.parse(this, strictTimeFormatter)
-    } catch (_: DateTimeParseException) {
-        return false
-    }
-    return true
-}

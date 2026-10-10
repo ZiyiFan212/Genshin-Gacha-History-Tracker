@@ -23,7 +23,7 @@ class UigfExportTest {
         val directory = createTempDirectory("uigf-v41-")
         try {
             val source = record("400")
-            val path = UigfExporter.export("600000001" to listOf(source), "v4.1", directory, "zh-cn", 8).getOrThrow()
+            val path = UigfExporter.export("600000001" to listOf(source), "v4.1", directory, "zh-cn").getOrThrow()
             val root = Json.parseToJsonElement(path.readText()).jsonObject
             assertEquals(setOf("info", "hk4e"), root.keys)
             val info = root.getValue("info").jsonObject
@@ -116,15 +116,15 @@ class UigfExportTest {
     }
 
     @Test
-    fun `timezone uses server UID mapping with explicit override`() {
+    fun `export timezone stays UTC8 regardless of UID prefix`() {
         val directory = createTempDirectory("uigf-zones-")
         try {
-            for ((uid, expected) in mapOf("600000001" to -5, "700000001" to 1, "800000001" to 8, "259231502" to 8)) {
+            for ((uid, expected) in mapOf("600000001" to 8, "700000001" to 8, "800000001" to 8, "259231502" to 8)) {
                 val path = UigfExporter.export(uid to listOf(record()), "v3.0", directory).getOrThrow()
                 val info = Json.parseToJsonElement(path.readText()).jsonObject.getValue("info").jsonObject
                 assertEquals(expected, info.getValue("region_time_zone").jsonPrimitive.int)
             }
-            val path = UigfExporter.export("600000001" to listOf(record()), "v3.0", directory, regionTimeZone = 8).getOrThrow()
+            val path = UigfExporter.export("600000001" to listOf(record()), "v3.0", directory).getOrThrow()
             assertEquals(8, Json.parseToJsonElement(path.readText()).jsonObject.getValue("info").jsonObject.getValue("region_time_zone").jsonPrimitive.int)
         } finally { directory.toFile().deleteRecursively() }
     }

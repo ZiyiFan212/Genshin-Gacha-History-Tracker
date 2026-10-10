@@ -34,25 +34,25 @@ class AnalyticsTest {
 
     @Test
     fun `Single pull`() {
-        val before = LocalDate.now()
+        val before = LocalDate.now(utilities.SERVER_TIME_OFFSET)
         val pullDate = before.minusDays(12)
         val records = listOf(record("301", "$pullDate 12:00:00", 3))
 
         val actual = records.longestNoPullIntervalDays()
 
-        val after = LocalDate.now()
+        val after = LocalDate.now(utilities.SERVER_TIME_OFFSET)
         // Allow the date to roll over at midnight while the test is running.
         assertTrue(actual in 12..ChronoUnit.DAYS.between(pullDate, after).toInt())
     }
 
     @Test
     fun `longest no pull interval for a pull today has no completed day`() {
-        val before = LocalDate.now()
+        val before = LocalDate.now(utilities.SERVER_TIME_OFFSET)
         val records = listOf(record("301", "$before 00:00:00", 3))
 
         val actual = records.longestNoPullIntervalDays()
 
-        val after = LocalDate.now()
+        val after = LocalDate.now(utilities.SERVER_TIME_OFFSET)
         assertTrue(actual in 0..ChronoUnit.DAYS.between(before, after).toInt())
     }
 

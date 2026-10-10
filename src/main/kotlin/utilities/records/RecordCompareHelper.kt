@@ -14,7 +14,7 @@ fun compareGachaRecordIds(a: String, b: String): Int {
 
 fun GachaRecord.compareChronologically(other: GachaRecord): Int {
     val byId = compareGachaRecordIds(recordID, other.recordID)
-    if (byId == -1 || byId == 0) return time.compareTo(other.time)// we guarantee that record ID is valid, so this is a guard
+    if (byId == 0) return time.compareTo(other.time)
     return byId
 }
 

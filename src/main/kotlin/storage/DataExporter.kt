@@ -15,6 +15,7 @@ import kotlinx.serialization.json.encodeToJsonElement
 import model.GachaRecord
 import utilities.records.sortedChronologicallyDescending
 import validation.uidValidationError
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -32,7 +33,7 @@ object CsvExporter : GachaExporter {
 
     override fun export(records: List<GachaRecord>, uid: String, path: Path, ignoreThreeStar: Boolean): Result<Path> =
         runCatching {
-            val file = resolveFile(path, uid, fileExtension)
+            val file = resolveFile(path, uid, fileExtension).toAbsolutePath()
             val filtered = if (ignoreThreeStar) records.filter { it.rankType >= 4 } else records
             val header = listOf(
                 I18nManager["export.csv_time"],
@@ -44,20 +45,26 @@ object CsvExporter : GachaExporter {
                 I18nManager["export.csv_localized"],
             ).joinToString(",") { csvCell(it) }
 
-            val rows = filtered.sortedChronologicallyDescending().joinToString("\n") { record ->
-                val name = ItemTranslator[record.itemID]
-                listOf(
-                    record.time,
-                    record.name,
-                    record.itemID,
-                    record.itemType,
-                    record.gachaType,
-                    record.rankType,
-                    name,
-                ).joinToString(",") { field -> csvCell(field.toString()) }
+            file.parent?.let { Files.createDirectories(it) }
+
+            Files.newBufferedWriter(file, StandardCharsets.UTF_8).use { out ->
+                out.write('\uFEFF'.code) // BOM to avoid encoding issue
+                out.write(header)
+                filtered.sortedChronologicallyDescending().forEach { record ->
+                    out.write("\n")
+                    out.write(
+                        listOf(
+                            record.time,
+                            record.name,
+                            record.itemID,
+                            record.itemType,
+                            record.gachaType,
+                            record.rankType,
+                            ItemTranslator[record.itemID],
+                        ).joinToString(",") { field -> csvCell(field.toString()) }
+                    )
+                }
             }
-            Files.createDirectories(file.parent)
-            file.toFile().writeText("$header\n$rows")
             file
         }
 }
@@ -68,7 +75,7 @@ object HtmlExporter : GachaExporter {
 
     override fun export(records: List<GachaRecord>, uid: String, path: Path, ignoreThreeStar: Boolean): Result<Path> =
         runCatching {
-            val file = resolveFile(path, uid, fileExtension)
+            val file = resolveFile(path, uid, fileExtension).toAbsolutePath()
             val filtered = if (ignoreThreeStar) records.filter { it.rankType >= 4 } else records
             val sorted = filtered.sortedChronologicallyDescending()
 
@@ -135,62 +142,62 @@ object HtmlExporter : GachaExporter {
             val threeStarLabel = I18nManager["export.html_three_star"]
 
             val html = """
-<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>${htmlEscape(title)} UID ${htmlEscape(uid)}</title>
-<style>
-  body{font-family:sans-serif;margin:2rem;background:#1a1a2e;color:#eee}
-  table{border-collapse:collapse;width:100%;margin-top:1rem}
-  th,td{border:1px solid #444;padding:8px;text-align:left}
-  th{background:#16213e}
-  .five{color:gold}.four{color:#c77dff}.three{color:#90e0ef}
-  h1{color:#90e0ef}
-  h2{color:#c77dff;margin-top:2rem}
-  .stats{display:flex;gap:2rem;margin:1rem 0;flex-wrap:wrap}
-  .stats div{background:#16213e;padding:1rem;border-radius:8px}
-  .filters{display:flex;gap:1rem;margin:1rem 0}
-  select{background:#16213e;color:#eee;border:1px solid #444;padding:6px;border-radius:4px}
-  .hidden{display:none}
-</style></head>
-<body>
-<h1>${htmlEscape(title)} — UID ${htmlEscape(uid)}</h1>
-<div class="stats">
-  <div><b>${htmlEscape(totalLabel)}:</b> $total</div>
-  <div><b>${htmlEscape(fiveStarLabel)}:</b> $fiveStarCount</div>
-  <div><b>${htmlEscape(fourStarLabel)}:</b> $fourStarCount</div>
-  ${if (!ignoreThreeStar) "<div><b>${htmlEscape(threeStarLabel)}:</b> $threeStarCount</div>" else ""}
-</div>
-<h2>${htmlEscape(byBannerLabel)}</h2>
-<table>
-<thead><tr><th>${htmlEscape(headerBanner)}</th><th>${htmlEscape(totalLabel)}</th><th>${htmlEscape(fiveStarLabel)}</th><th>${htmlEscape(fourStarLabel)}</th></tr></thead>
-<tbody>$bannerTableRows</tbody>
-</table>
-<div class="filters">
-  <label>${htmlEscape(bannerLabel)}: <select id="bannerFilter">$bannerOptions</select></label>
-  <label>${htmlEscape(rarityLabel)}: <select id="rarityFilter">$rarityOptions</select></label>
-</div>
-<table id="gachaTable">
-<thead><tr><th>${htmlEscape(headerTime)}</th><th>${htmlEscape(headerItem)}</th><th>${htmlEscape(headerBanner)}</th><th>${htmlEscape(headerRarity)}</th></tr></thead>
-<tbody>$rows</tbody>
-</table>
-<script>
-  function filterTable() {
-    var banner = document.getElementById("bannerFilter").value;
-    var rarity = document.getElementById("rarityFilter").value;
-    var rows = document.querySelectorAll("#gachaTable tbody tr");
-    rows.forEach(function(row) {
-      var bMatch = banner === "all" || row.dataset.banner === banner;
-      var rMatch = rarity === "all" || row.dataset.rarity === rarity;
-      row.classList.toggle("hidden", !(bMatch && rMatch));
-    });
-  }
-  document.getElementById("bannerFilter").addEventListener("change", filterTable);
-  document.getElementById("rarityFilter").addEventListener("change", filterTable);
-</script>
-</body></html>
-            """.trimIndent()
+                <!DOCTYPE html>
+                <html><head><meta charset="utf-8"><title>${htmlEscape(title)} UID ${htmlEscape(uid)}</title>
+                <style>
+                  body{font-family:sans-serif;margin:2rem;background:#1a1a2e;color:#eee}
+                  table{border-collapse:collapse;width:100%;margin-top:1rem}
+                  th,td{border:1px solid #444;padding:8px;text-align:left}
+                  th{background:#16213e}
+                  .five{color:gold}.four{color:#c77dff}.three{color:#90e0ef}
+                  h1{color:#90e0ef}
+                  h2{color:#c77dff;margin-top:2rem}
+                  .stats{display:flex;gap:2rem;margin:1rem 0;flex-wrap:wrap}
+                  .stats div{background:#16213e;padding:1rem;border-radius:8px}
+                  .filters{display:flex;gap:1rem;margin:1rem 0}
+                  select{background:#16213e;color:#eee;border:1px solid #444;padding:6px;border-radius:4px}
+                  .hidden{display:none}
+                </style></head>
+                <body>
+                <h1>${htmlEscape(title)} — UID ${htmlEscape(uid)}</h1>
+                <div class="stats">
+                  <div><b>${htmlEscape(totalLabel)}:</b> $total</div>
+                  <div><b>${htmlEscape(fiveStarLabel)}:</b> $fiveStarCount</div>
+                  <div><b>${htmlEscape(fourStarLabel)}:</b> $fourStarCount</div>
+                  ${if (!ignoreThreeStar) "<div><b>${htmlEscape(threeStarLabel)}:</b> $threeStarCount</div>" else ""}
+                </div>
+                <h2>${htmlEscape(byBannerLabel)}</h2>
+                <table>
+                <thead><tr><th>${htmlEscape(headerBanner)}</th><th>${htmlEscape(totalLabel)}</th><th>${htmlEscape(fiveStarLabel)}</th><th>${htmlEscape(fourStarLabel)}</th></tr></thead>
+                <tbody>$bannerTableRows</tbody>
+                </table>
+                <div class="filters">
+                  <label>${htmlEscape(bannerLabel)}: <select id="bannerFilter">$bannerOptions</select></label>
+                  <label>${htmlEscape(rarityLabel)}: <select id="rarityFilter">$rarityOptions</select></label>
+                </div>
+                <table id="gachaTable">
+                <thead><tr><th>${htmlEscape(headerTime)}</th><th>${htmlEscape(headerItem)}</th><th>${htmlEscape(headerBanner)}</th><th>${htmlEscape(headerRarity)}</th></tr></thead>
+                <tbody>$rows</tbody>
+                </table>
+                <script>
+                  function filterTable() {
+                    var banner = document.getElementById("bannerFilter").value;
+                    var rarity = document.getElementById("rarityFilter").value;
+                    var rows = document.querySelectorAll("#gachaTable tbody tr");
+                    rows.forEach(function(row) {
+                      var bMatch = banner === "all" || row.dataset.banner === banner;
+                      var rMatch = rarity === "all" || row.dataset.rarity === rarity;
+                      row.classList.toggle("hidden", !(bMatch && rMatch));
+                    });
+                  }
+                  document.getElementById("bannerFilter").addEventListener("change", filterTable);
+                  document.getElementById("rarityFilter").addEventListener("change", filterTable);
+                </script>
+                </body></html>
+                            """.trimIndent()
 
-            Files.createDirectories(file.parent)
-            file.toFile().writeText(html)
+            file.toAbsolutePath().parent?.let { Files.createDirectories(it) }
+            Files.writeString(file, html, StandardCharsets.UTF_8)
             file
         }
 

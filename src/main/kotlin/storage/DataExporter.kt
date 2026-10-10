@@ -42,7 +42,7 @@ object CsvExporter : GachaExporter {
                 I18nManager["export.csv_banner"],
                 I18nManager["export.csv_rarity"],
                 I18nManager["export.csv_localized"],
-            ).joinToString(",")
+            ).joinToString(",") { csvCell(it) }
 
             val rows = filtered.sortedChronologicallyDescending().joinToString("\n") { record ->
                 val name = ItemTranslator[record.itemID]
@@ -54,7 +54,7 @@ object CsvExporter : GachaExporter {
                     record.gachaType,
                     record.rankType,
                     name,
-                ).joinToString(",") { field -> "\"${field.toString().replace("\"", "\"\"")}\"" }
+                ).joinToString(",") { field -> csvCell(field.toString()) }
             }
             Files.createDirectories(file.parent)
             file.toFile().writeText("$header\n$rows")
@@ -90,7 +90,7 @@ object HtmlExporter : GachaExporter {
 
             val bannerTableRows = bannerStats.entries.sortedBy { it.key }.joinToString("\n") { (code, stats) ->
                 val bannerName = I18nManager["banner.$code"]
-                """<tr data-banner="$code"><td>$bannerName</td><td>${stats.first}</td><td>${stats.second}</td><td>${stats.third}</td></tr>"""
+                """<tr data-banner="${htmlEscape(code)}"><td>${htmlEscape(bannerName)}</td><td>${stats.first}</td><td>${stats.second}</td><td>${stats.third}</td></tr>"""
             }
 
             val bannerOptions = buildString {
@@ -122,7 +122,7 @@ object HtmlExporter : GachaExporter {
                 }
                 val displayCode = if (record.gachaType == "400") "301" else record.gachaType
                 val displayName = I18nManager["banner.$displayCode"]
-                """<tr class="$rankClass" data-banner="$displayCode" data-rarity="${record.rankType}"><td>${record.time}</td><td>$localized</td><td>$displayName</td><td>${record.rankType}★</td></tr>"""
+                """<tr class="$rankClass" data-banner="${htmlEscape(displayCode)}" data-rarity="${record.rankType}"><td>${htmlEscape(record.time)}</td><td>${htmlEscape(localized)}</td><td>${htmlEscape(displayName)}</td><td>${record.rankType}★</td></tr>"""
             }
 
             val title = I18nManager["export.html_title"]
@@ -136,7 +136,7 @@ object HtmlExporter : GachaExporter {
 
             val html = """
 <!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>$title UID $uid</title>
+<html><head><meta charset="utf-8"><title>${htmlEscape(title)} UID ${htmlEscape(uid)}</title>
 <style>
   body{font-family:sans-serif;margin:2rem;background:#1a1a2e;color:#eee}
   table{border-collapse:collapse;width:100%;margin-top:1rem}
@@ -152,24 +152,24 @@ object HtmlExporter : GachaExporter {
   .hidden{display:none}
 </style></head>
 <body>
-<h1>$title — UID $uid</h1>
+<h1>${htmlEscape(title)} — UID ${htmlEscape(uid)}</h1>
 <div class="stats">
-  <div><b>$totalLabel:</b> $total</div>
-  <div><b>$fiveStarLabel:</b> $fiveStarCount</div>
-  <div><b>$fourStarLabel:</b> $fourStarCount</div>
-  ${if (!ignoreThreeStar) "<div><b>$threeStarLabel:</b> $threeStarCount</div>" else ""}
+  <div><b>${htmlEscape(totalLabel)}:</b> $total</div>
+  <div><b>${htmlEscape(fiveStarLabel)}:</b> $fiveStarCount</div>
+  <div><b>${htmlEscape(fourStarLabel)}:</b> $fourStarCount</div>
+  ${if (!ignoreThreeStar) "<div><b>${htmlEscape(threeStarLabel)}:</b> $threeStarCount</div>" else ""}
 </div>
-<h2>$byBannerLabel</h2>
+<h2>${htmlEscape(byBannerLabel)}</h2>
 <table>
-<thead><tr><th>$headerBanner</th><th>$totalLabel</th><th>$fiveStarLabel</th><th>$fourStarLabel</th></tr></thead>
+<thead><tr><th>${htmlEscape(headerBanner)}</th><th>${htmlEscape(totalLabel)}</th><th>${htmlEscape(fiveStarLabel)}</th><th>${htmlEscape(fourStarLabel)}</th></tr></thead>
 <tbody>$bannerTableRows</tbody>
 </table>
 <div class="filters">
-  <label>$bannerLabel: <select id="bannerFilter">$bannerOptions</select></label>
-  <label>$rarityLabel: <select id="rarityFilter">$rarityOptions</select></label>
+  <label>${htmlEscape(bannerLabel)}: <select id="bannerFilter">$bannerOptions</select></label>
+  <label>${htmlEscape(rarityLabel)}: <select id="rarityFilter">$rarityOptions</select></label>
 </div>
 <table id="gachaTable">
-<thead><tr><th>$headerTime</th><th>$headerItem</th><th>$headerBanner</th><th>$headerRarity</th></tr></thead>
+<thead><tr><th>${htmlEscape(headerTime)}</th><th>${htmlEscape(headerItem)}</th><th>${htmlEscape(headerBanner)}</th><th>${htmlEscape(headerRarity)}</th></tr></thead>
 <tbody>$rows</tbody>
 </table>
 <script>
@@ -195,7 +195,7 @@ object HtmlExporter : GachaExporter {
         }
 
     private fun StringBuilder.appendElement(value: String, label: String) {
-        append("""<option value="$value">$label</option>""")
+        append("""<option value="${htmlEscape(value)}">${htmlEscape(label)}</option>""")
     }
 }
 
@@ -367,4 +367,27 @@ private fun resolveFile(path: Path, uid: String, fileType: String, version: Stri
     val target = base.resolve(fileName).normalize()
     require(target.startsWith(base) && target != base) { "Export path escapes the directory" }
     return target
+}
+
+/** For HTML text and quoted attributes; not for JavaScript or CSS contexts. */
+private fun htmlEscape(value: String): String = buildString {
+    value.forEach { character ->
+        append(when (character) {
+            '&' -> "&amp;"
+            '<' -> "&lt;"
+            '>' -> "&gt;"
+            '"' -> "&quot;"
+            '\'' -> "&#39;"
+            else -> character.toString()
+        })
+    }
+}
+
+/** Force formula-like spreadsheet fields to text, then apply CSV quoting. */
+private fun csvCell(value: String): String {
+    val firstSignificant = value.firstOrNull { !it.isWhitespace() && !it.isISOControl() && it != '\uFEFF' }
+    val needsTextPrefix = firstSignificant in listOf('=', '+', '-', '@', '＝', '＋', '－', '＠') ||
+        value.firstOrNull() in listOf('\t', '\r', '\n')
+    val safe = if (needsTextPrefix) "'$value" else value
+    return "\"${safe.replace("\"", "\"\"")}\""
 }

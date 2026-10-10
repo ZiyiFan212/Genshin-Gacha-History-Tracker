@@ -10,6 +10,9 @@ import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import storage.IOConfiguration;
 import model.GachaRecord;
+import model.TimelineEntry;
+import analytics.BannerAnalyticsKt;
+import java.util.HashSet;
 import utilities.AppBootstrap;
 import utilities.AppConstants;
 
@@ -20,7 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +34,6 @@ public class ExcelWriter {
     }
 
     static final String[] bannerArr = {"banner.301", "banner.400", "banner.302", "banner.500", "banner.200", "banner.100"};
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public static void exportExcel(Map<String, List<GachaRecord>> pair) throws IOException, ExcelExportException {
         AppBootstrap.INSTANCE.requireInitialized();
@@ -49,7 +50,9 @@ public class ExcelWriter {
             throw new IllegalArgumentException("Gacha record list is empty for uid: " + uid);
         }
 
-        records.sort((a, b) -> -compareChronologically(a, b));
+        // Calculate on the complete history before separating 301/400 into sheets.
+        List<TimelineEntry> timeline = BannerAnalyticsKt.buildTimeline(
+                records, new HashSet<>(AppConstants.INSTANCE.getBannerCodeList()));
 
         Map<String, Integer> imageCache = new HashMap<>();
         try (Workbook wb = new XSSFWorkbook()) {
@@ -80,7 +83,8 @@ public class ExcelWriter {
                 headerRow.createCell(5).setCellValue(I18nManager.INSTANCE.get("Excelheader.pity"));
 
                 int rowNum = 1;
-                for (GachaRecord rd : records) {
+                for (TimelineEntry timelineEntry : timeline) {
+                    GachaRecord rd = timelineEntry.getRecord();
                     if (!rd.getGachaType().equals(bannerCode)) continue;
                     Row row = sheet.createRow(rowNum);
                     addIconToCell(wb, drawing, rd.getItemID(), rowNum, imageCache);
@@ -99,7 +103,7 @@ public class ExcelWriter {
                         row.createCell(4).setCellValue(String.valueOf(rank));
                     }
 
-                    row.createCell(5).setCellValue(rowNum);
+                    row.createCell(5).setCellValue(timelineEntry.getPityAtPull());
                     rowNum++;
                 }
             }
@@ -172,42 +176,6 @@ public class ExcelWriter {
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
         return now.format(formatter);
-    }
-
-    private static LocalDateTime parseTimeSafe(String time) {
-        if (time == null || time.isBlank()) {
-            return LocalDateTime.MIN;
-        }
-        try {
-            return LocalDateTime.parse(time, TIME_FORMAT);
-        } catch (DateTimeParseException _) {
-            return LocalDateTime.MIN;
-        }
-    }
-
-    private static int compareChronologically(GachaRecord a, GachaRecord b) {
-        String idA = a.getRecordID();
-        String idB = b.getRecordID();
-        if (!idA.isBlank() && !idB.isBlank()) {
-            int byId = compareRecordId(idA, idB);
-            if (byId != 0) return byId;
-        }
-        LocalDateTime ta = parseTimeSafe(a.getTime());
-        LocalDateTime tb = parseTimeSafe(b.getTime());
-        return ta.compareTo(tb);
-    }
-
-    private static int compareRecordId(String a, String b) {
-        if (a == null && b == null) return 0;
-        if (a == null || a.isBlank()) return -1;
-        if (b == null || b.isBlank()) return 1;
-        try {
-            long aNum = Long.parseLong(a);
-            long bNum = Long.parseLong(b);
-            return Long.compare(aNum, bNum);
-        } catch (NumberFormatException _) {
-            return a.compareTo(b);
-        }
     }
 
     public static class ExcelExportException extends Exception {

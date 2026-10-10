@@ -1,6 +1,8 @@
 package model
 
 import utilities.records.sanitizeItemName
+import validation.requireSupportedImportTimezone
+import kotlinx.serialization.json.jsonArray
 
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
@@ -49,9 +51,13 @@ fun parseJson(jsonString: String): Result<Pair<String, List<GachaRecord>>> = run
         require(archive.hk4e.size == 1) {
             "Import requires exactly one Genshin Impact account; export each UID separately."
         }
-        archive.hk4e.single().let { it.uid to it.list }
+        archive.hk4e.single().let {
+            requireSupportedImportTimezone(root.getValue("hk4e").jsonArray.single().jsonObject, it.uid, "timezone", true)
+            it.uid to it.list
+        }
     } else {
         val wrapper = customizeJson.decodeFromJsonElement<UIGFWrapper>(root)
+        requireSupportedImportTimezone(root.getValue("info").jsonObject, wrapper.info.uid, "region_time_zone", false)
         wrapper.info.uid to wrapper.list.ifEmpty { wrapper.records }
     }
 

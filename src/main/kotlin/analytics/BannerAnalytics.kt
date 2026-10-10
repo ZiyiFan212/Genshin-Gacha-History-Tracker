@@ -12,6 +12,7 @@ import utilities.records.sortedChronologically
 import utilities.AppConstants
 import model.GuaranteeType
 import utilities.AppConstants.StandardItemUID
+import utilities.SERVER_TIME_OFFSET
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -244,7 +245,7 @@ fun List<GachaRecord>.longestNoPullIntervalDays(): Int {
     if (this.isEmpty()) return 0
 
     // Handle if there's only one pull in the list.
-    val today = LocalDate.now()
+    val today = LocalDate.now(SERVER_TIME_OFFSET)
     if (this.size == 1){
         val pullDate = LocalDate.parse(this[0].time.substring(0, 10))
         return ChronoUnit.DAYS.between(pullDate, today).toInt()

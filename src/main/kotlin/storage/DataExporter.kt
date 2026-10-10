@@ -1,5 +1,8 @@
 package storage
 
+import utilities.SUPPORTED_SERVER_TIMEZONE
+import utilities.SERVER_TIME_OFFSET
+
 import assets.I18nManager
 import assets.ItemTranslator
 import kotlinx.serialization.SerialName
@@ -215,7 +218,7 @@ object UigfExporter : GachaExporter {
         @SerialName("export_app") val exportApp: String = "Genshin-Analyzer-NEXT",
         @SerialName("export_app_version") val exportAppVersion: String = "v0.1",
         @SerialName("uigf_version") val uigfVersion: String,
-        @SerialName("region_time_zone") val timeZone: Int = serverTimeZone(uid)
+        @SerialName("region_time_zone") val timeZone: Int = SUPPORTED_SERVER_TIMEZONE
     )
 
     @Serializable
@@ -270,13 +273,11 @@ object UigfExporter : GachaExporter {
         version: String,
         path: Path = IOConfiguration.default_ExportPath,
         language: String = if (I18nManager.currentLocale == "zh") "zh-cn" else "en-us",
-        regionTimeZone: Int = serverTimeZone(pair.first),
     ): Result<Path> = runCatching {
 
         require(version == "v3.0" || version == "v4.1") { "Unsupported UIGF version: $version" }
         require(pair.second.isNotEmpty()) { "Cannot export empty gacha records" }
         require(language in setOf("zh-cn", "en-us")) { "Unsupported export language: $language" }
-        require(regionTimeZone in -12..14) { "Invalid server timezone: $regionTimeZone" }
 
         val outputFile = resolveFile(path, pair.first, fileExtension, version)
         val exportedAt = Instant.now()
@@ -285,10 +286,10 @@ object UigfExporter : GachaExporter {
                 uid = pair.first,
                 lang = language,
                 exportTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                    .withZone(ZoneOffset.ofHours(regionTimeZone)).format(exportedAt),
+                    .withZone(SERVER_TIME_OFFSET).format(exportedAt),
                 exportTimestamp = exportedAt.epochSecond,
                 uigfVersion = version,
-                timeZone = regionTimeZone
+                timeZone = SUPPORTED_SERVER_TIMEZONE
             ))
             val v3recordObj = json.encodeToJsonElement(pair.second.map { record ->
                     UigfV3Record(
@@ -323,7 +324,7 @@ object UigfExporter : GachaExporter {
 
             }
             val v41Hk4eObj = json.encodeToJsonElement(UigfV41Hk4e(
-                uid = pair.first, timeZone = regionTimeZone, language = language, list = v41List
+                uid = pair.first, timeZone = SUPPORTED_SERVER_TIMEZONE, language = language, list = v41List
             ))
             buildJsonObject {
                 put("info", v41InfoObj)
@@ -337,15 +338,6 @@ object UigfExporter : GachaExporter {
         outputFile
     }
 
-
-    // UIGF v3 fallback when no explicit server timezone is available!!
-    private fun serverTimeZone(uid: String): Int  {
-        return when (uid.firstOrNull()) {
-            '6' -> -5
-            '7' -> 1
-            else -> 8
-        }
-    }
 
     // sanitize the name based on the user's current language choice.
     private fun typeNameTranslator(input: String, lang: String): String =

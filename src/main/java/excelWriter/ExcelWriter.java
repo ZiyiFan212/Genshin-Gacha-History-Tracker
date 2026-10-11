@@ -16,10 +16,9 @@ import java.util.HashSet;
 import utilities.AppBootstrap;
 import utilities.AppConstants;
 
-import java.io.FileOutputStream;
+import storage.ExportFilePublisher;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -110,10 +109,7 @@ public class ExcelWriter {
 
             String fileName = I18nManager.INSTANCE.get("storage.exceltitle") + uid + " " + localTime() + ".xlsx";
             Path outputFile = IOConfiguration.INSTANCE.getDefault_ExportPath().resolve(fileName);
-            Files.createDirectories(outputFile.getParent());
-            try (FileOutputStream fileOut = new FileOutputStream(outputFile.toFile())) {
-                wb.write(fileOut);
-            }
+            ExportFilePublisher.publish(outputFile, true, wb::write);
         }
     }
 
@@ -174,7 +170,7 @@ public class ExcelWriter {
 
     private static String localTime() {
         LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss-SSS");
         return now.format(formatter);
     }
 

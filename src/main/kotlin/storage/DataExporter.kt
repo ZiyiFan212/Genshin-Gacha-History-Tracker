@@ -45,28 +45,36 @@ object CsvExporter : GachaExporter {
                 I18nManager["export.csv_localized"],
             ).joinToString(",") { csvCell(it) }
 
-            file.parent?.let { Files.createDirectories(it) }
-
-            Files.newBufferedWriter(file, StandardCharsets.UTF_8).use { out ->
-                out.write('\uFEFF'.code) // BOM to avoid encoding issue
-                out.write(header)
-                filtered.sortedChronologicallyDescending().forEach { record ->
-                    out.write("\n")
-                    out.write(
-                        listOf(
-                            record.time,
-                            record.name,
-                            record.itemID,
-                            record.itemType,
-                            record.gachaType,
-                            record.rankType,
-                            ItemTranslator[record.itemID],
-                        ).joinToString(",") { field -> csvCell(field.toString()) }
-                    )
+            ExportFilePublisher.publish(file, Files.isDirectory(path)) { stream ->
+                stream.bufferedWriter(StandardCharsets.UTF_8).use { out ->
+                    out.write('\uFEFF'.code) // BOM to avoid encoding issue
+                    out.write(header)
+                    filtered.sortedChronologicallyDescending().forEach { record ->
+                        out.write("\n")
+                        out.write(
+                            listOf(
+                                record.time,
+                                record.name,
+                                record.itemID,
+                                record.itemType,
+                                record.gachaType,
+                                record.rankType,
+                                ItemTranslator[record.itemID],
+                            ).joinToString(",") { field -> csvCell(field.toString()) }
+                        )
+                    }
                 }
             }
-            file
         }
+
+    /** Force formula-like spreadsheet fields to text, then apply CSV quoting. */
+    private fun csvCell(value: String): String {
+        val firstSignificant = value.firstOrNull { !it.isWhitespace() && !it.isISOControl() && it != '\uFEFF' }
+        val needsTextPrefix = firstSignificant in listOf('=', '+', '-', '@', '＝', '＋', '－', '＠') ||
+                value.firstOrNull() in listOf('\t', '\r', '\n')
+        val safe = if (needsTextPrefix) "'$value" else value
+        return "\"${safe.replace("\"", "\"\"")}\""
+    }
 }
 
 object HtmlExporter : GachaExporter {
@@ -196,13 +204,27 @@ object HtmlExporter : GachaExporter {
                 </body></html>
                             """.trimIndent()
 
-            file.toAbsolutePath().parent?.let { Files.createDirectories(it) }
-            Files.writeString(file, html, StandardCharsets.UTF_8)
-            file
+            ExportFilePublisher.publish(file, Files.isDirectory(path)) { stream ->
+                stream.write(html.toByteArray(StandardCharsets.UTF_8))
+            }
         }
 
     private fun StringBuilder.appendElement(value: String, label: String) {
         append("""<option value="${htmlEscape(value)}">${htmlEscape(label)}</option>""")
+    }
+
+    /** For HTML text and quoted attributes; not for JavaScript or CSS contexts. */
+    private fun htmlEscape(value: String): String = buildString {
+        value.forEach { character ->
+            append(when (character) {
+                '&' -> "&amp;"
+                '<' -> "&lt;"
+                '>' -> "&gt;"
+                '"' -> "&quot;"
+                '\'' -> "&#39;"
+                else -> character.toString()
+            })
+        }
     }
 }
 
@@ -340,9 +362,9 @@ object UigfExporter : GachaExporter {
         }
 
         val jsonStr = json.encodeToString(JsonObject.serializer(), finalJsonMap)
-        outputFile.toAbsolutePath().parent?.let(Files::createDirectories)
-        outputFile.toFile().writeText(jsonStr)
-        outputFile
+        ExportFilePublisher.publish(outputFile, Files.isDirectory(path)) { stream ->
+            stream.write(jsonStr.toByteArray(StandardCharsets.UTF_8))
+        }
     }
 
 
@@ -365,9 +387,9 @@ private fun resolveFile(path: Path, uid: String, fileType: String, version: Stri
     if (!Files.isDirectory(base)) return base
 
     val fileName = if (version == null) {
-        "Gacha_${uid}_${Instant.now().epochSecond}.$fileType"
+        "Gacha_${uid}_${Instant.now().toEpochMilli()}.$fileType"
     } else {
-        val timestamp = DateTimeFormatter.ofPattern("yyyyMMddHHmm")
+        val timestamp = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS")
             .withZone(ZoneOffset.UTC).format(Instant.now())
         "UIGF_${version}_${uid}_${timestamp}.$fileType"
     }
@@ -376,25 +398,6 @@ private fun resolveFile(path: Path, uid: String, fileType: String, version: Stri
     return target
 }
 
-/** For HTML text and quoted attributes; not for JavaScript or CSS contexts. */
-private fun htmlEscape(value: String): String = buildString {
-    value.forEach { character ->
-        append(when (character) {
-            '&' -> "&amp;"
-            '<' -> "&lt;"
-            '>' -> "&gt;"
-            '"' -> "&quot;"
-            '\'' -> "&#39;"
-            else -> character.toString()
-        })
-    }
-}
 
-/** Force formula-like spreadsheet fields to text, then apply CSV quoting. */
-private fun csvCell(value: String): String {
-    val firstSignificant = value.firstOrNull { !it.isWhitespace() && !it.isISOControl() && it != '\uFEFF' }
-    val needsTextPrefix = firstSignificant in listOf('=', '+', '-', '@', '＝', '＋', '－', '＠') ||
-        value.firstOrNull() in listOf('\t', '\r', '\n')
-    val safe = if (needsTextPrefix) "'$value" else value
-    return "\"${safe.replace("\"", "\"\"")}\""
-}
+
+

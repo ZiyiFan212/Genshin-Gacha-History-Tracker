@@ -132,13 +132,15 @@ fun List<GachaRecord>.buildTimeline(bannerFilter: Set<String> = limitedBanners):
         else record.gachaType
     }
 
-    for ((banner, records) in grouped) {
+    val copyRecords = this.toMutableList()
+
+    for ((banner, copyRecords) in grouped) {
         var pity = 0
         var lastFiveWasLimited = false
         var hadFiveOnBanner = false
         var losingStreak = 0
 
-        for (record in records.sortedChronologically()) {
+        for (record in copyRecords.sortedChronologically()) {
             pity++
             val bannerType = record.gachaType
             var guarantee = GuaranteeType.NONE
@@ -153,7 +155,7 @@ fun List<GachaRecord>.buildTimeline(bannerFilter: Set<String> = limitedBanners):
 
                 if (bannerType == AppConstants.CHARACTER_EVENT_BANNER || bannerType == AppConstants.CHARACTER_EVENT_BANNER2) {
                     hadFiveOnBanner = true
-                    lastFiveWasLimited = !AppConstants.StandardItemUID.contains(record.itemID)
+                    lastFiveWasLimited = !StandardItemUID.contains(record.itemID)
                     losingStreak = losingStreakCounter(lastFiveWasLimited, losingStreak)
                 }
             }

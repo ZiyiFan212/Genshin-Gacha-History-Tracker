@@ -152,25 +152,28 @@ fun FrameWindowScope.App(viewModel: AppViewModel,
                                 modifier = Modifier.weight(1f),
                             )
                             AppScreen.IMPORT -> ImportScreen(state.lastImport, viewModel::importFromPath, Modifier.weight(1f))
-                            AppScreen.STATS -> StatsScreen(
-                                bannerStats = viewModel.bannerStats,
-                                luck = state.luck,
-                                consumption = state.consumption,
-                                streak = state.streakAnalysis,
-                                goldHistory = viewModel.goldHistory,
-                                pityState = state.pityState ?: model.PityState(0, 0, 0, 0, 0),
-                                totalWishes = state.stats?.totalWishes ?: 0,
-                                longestNoPullDays = viewModel.longestNoPullDays,
-                                limitedWeaponAvgPity = viewModel.limitedWeaponAvgPity,
-                                upRatio = viewModel.upRatio,
-                                modifier = Modifier.weight(1f),
-                            )
+                            AppScreen.STATS -> {
+                                val analytics = state.analytics
+                                StatsScreen(
+                                    bannerStats = analytics.bannerStats,
+                                    luck = state.luck,
+                                    consumption = state.consumption,
+                                    streak = state.streakAnalysis,
+                                    goldHistory = analytics.goldHistory,
+                                    pityState = state.pityState ?: model.PityState(0, 0, 0, 0, 0),
+                                    totalWishes = state.stats?.totalWishes ?: 0,
+                                    longestNoPullDays = analytics.longestNoPullDays,
+                                    limitedWeaponAvgPity = analytics.limitedWeaponAvgPity,
+                                    upRatio = analytics.upRatio,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
                             AppScreen.TIMELINE -> TimelineScreen(
-                                timeline = viewModel.timeline,
+                                timeline = state.analytics.timeline,
                                 showAllItems = state.showAllItems,
                                 modifier = Modifier.weight(1f),
                             )
-                            AppScreen.CALENDAR -> CalendarScreen(viewModel.calendarDays, Modifier.weight(1f))
+                            AppScreen.CALENDAR -> CalendarScreen(state.analytics.calendarDays, Modifier.weight(1f))
                             AppScreen.EXPORT -> ExportScreen(
                                 hasData = state.records.isNotEmpty(),
                                 onExportUigfV3 = { viewModel.exportUIGF("v3.0") },

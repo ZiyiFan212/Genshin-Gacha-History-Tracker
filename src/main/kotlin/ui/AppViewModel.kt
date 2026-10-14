@@ -47,7 +47,12 @@ import utilities.preference.PreferencesManager
 import utilities.preference.ThemeModeManager
 import analytics.upRatioCalculator
 import assets.ItemTranslator
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import utilities.safeUserMessage
 import validation.DataValidator
 import model.ValidationReport
@@ -95,6 +100,7 @@ class AppViewModel {
     private val UiState = MutableStateFlow(AppUiState())
     val state: StateFlow<AppUiState> = UiState.asStateFlow()
     private val proxyService = ProxyService()
+    private val preferencesMutex = Mutex()
 
     // run by lazy, particularly for the cache
     private var analyticsCache: AnalyticsCache? = null
@@ -141,18 +147,26 @@ class AppViewModel {
     fun initialize() {
         scope.launch {
             UiState.update { it.copy(isLoading = true, error = null) }
-            AppBootstrap.initialize().onSuccess {
-                val prefs = PreferencesManager.loadUserPreferences().getOrDefault(PreferencesManager.UserPreferences())
-                I18nManager.load(prefs.language)
-                UiState.update {
-                    it.copy(
-                        isLoading = false,
-                        themeMode = prefs.themeMode,
-                        language = prefs.language,
-                        showAllItems = prefs.showAllItems,
-                        ignoreThreeStarExport = prefs.ignoreThreeStarExport,
-                    )
+            val initialization = preferencesMutex.withLock {
+                val result = AppBootstrap.initialize()
+                currentCoroutineContext().ensureActive()
+                result.onSuccess {
+                    val prefs = PreferencesManager.loadUserPreferences().getOrDefault(PreferencesManager.UserPreferences())
+                    currentCoroutineContext().ensureActive()
+                    I18nManager.load(prefs.language)
+                    UiState.update {
+                        it.copy(
+                            isLoading = false,
+                            themeMode = prefs.themeMode,
+                            language = prefs.language,
+                            showAllItems = prefs.showAllItems,
+                            ignoreThreeStarExport = prefs.ignoreThreeStarExport,
+                        )
+                    }
                 }
+                result
+            }
+            initialization.onSuccess {
                 refreshUidList()
                 LogWriter.instance.tryLog(LogBody(Severity.INFO, "Application initialized"))
             }.onFailure { e ->
@@ -172,10 +186,45 @@ class AppViewModel {
 
     fun selectUid(uid: String) {
         scope.launch {
-            UiState.update { it.copy(isLoading = true, selectedUid = uid) }
-            loadUid(uid)
+            startUidLoad(uid)
         }
     }
+    // Accessed only on Main, including refreshes after database maintenance.
+    private var selectionJob: Job? = null
+    private var selectionRequest = 0L
+
+    private fun startUidLoad(uid: String) {
+        val request = ++selectionRequest
+        selectionJob?.cancel()
+        invalidateAnalyticsCache()
+        UiState.update {
+            it.nullAllData().copy(selectedUid = uid, isLoading = true, error = null)
+        }
+        selectionJob = scope.launch {
+            val result = loadUid(uid)
+            currentCoroutineContext().ensureActive()
+            if (request != selectionRequest) return@launch
+            invalidateAnalyticsCache()
+            result.onSuccess { data ->
+                UiState.update {
+                    it.copy(
+                        isLoading = false, records = data.records, stats = data.stats,
+                        pityState = data.pityState, luck = data.luck,
+                        consumption = data.consumption, streakAnalysis = data.streakAnalysis,
+                    )
+                }
+            }.onFailure { e ->
+                LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to load uid=$uid", e))
+                UiState.update { it.copy(isLoading = false, error = e.message) }
+            }
+        }
+    }
+
+    private fun AppUiState.nullAllData() = copy(
+        records = emptyList(), stats = null, pityState = null,
+        bannerStats = emptyList(), timeline = emptyList(), luck = null, consumption = emptyList(),
+        streakAnalysis = null, goldHistory = emptyMap(), calendarDays = emptyMap(),
+    )
 
     fun getCurrentUID(): String {
         return UiState.value.selectedUid ?: ""
@@ -222,8 +271,15 @@ class AppViewModel {
         }
     }
 
-    // lock with atomic boolean, only one thread can start capturing service
+
     private val isProxyLaunched = AtomicBoolean(false)
+    /**
+     * The function launches the proxy service to update the records.
+     * Validation, merging, updating database happen subsequently.
+     *
+     * Only ONE proxy entity should exist at the same time. Hence, the function is locked with atomic boolean,
+     * so another thread trying to launch while the service is running is prohibited!!
+     */
     fun captureFromProxy() {
         if (!isProxyLaunched.compareAndSet(false, true)) return
 
@@ -275,8 +331,9 @@ class AppViewModel {
     }
 
     fun exportUIGF(version: String) {
-        val uid = UiState.value.selectedUid ?: return
-        val records = UiState.value.records
+        val snapshot = UiState.value
+        val uid = snapshot.selectedUid ?: return
+        val records = snapshot.records
         scope.launch(Dispatchers.IO) {
             UigfExporter.export(uid to records, version)
                 .onSuccess { path ->
@@ -291,8 +348,9 @@ class AppViewModel {
     }
 
     fun exportExcel() {
-        val uid = UiState.value.selectedUid ?: return
-        val records = UiState.value.records
+        val snapshot = UiState.value
+        val uid = snapshot.selectedUid ?: return
+        val records = snapshot.records
         scope.launch(Dispatchers.IO) {
             runCatching {
                 ExcelWriter.exportExcel(mapOf(uid to records))
@@ -307,49 +365,70 @@ class AppViewModel {
     }
 
     fun exportCsv() {
-        val uid = UiState.value.selectedUid ?: return
+        val snapshot = UiState.value
+        val uid = snapshot.selectedUid ?: return
+        val records = snapshot.records
         scope.launch(Dispatchers.IO) {
-            CsvExporter.export(UiState.value.records, uid, ignoreThreeStar = UiState.value.ignoreThreeStarExport)
+            CsvExporter.export(records, uid, ignoreThreeStar = snapshot.ignoreThreeStarExport)
                 .onSuccess { path -> UiState.update { it.copy(message = I18nManager["message.export_success"] + " → $path") } }
                 .onFailure { e -> UiState.update { it.copy(error = e.message) } }
         }
     }
 
     fun exportHtml() {
-        val uid = UiState.value.selectedUid ?: return
+        val snapshot = UiState.value
+        val uid = snapshot.selectedUid ?: return
+        val records = snapshot.records
         scope.launch(Dispatchers.IO) {
-            HtmlExporter.export(UiState.value.records, uid, ignoreThreeStar = UiState.value.ignoreThreeStarExport)
+            HtmlExporter.export(records, uid, ignoreThreeStar = snapshot.ignoreThreeStarExport)
                 .onSuccess { path -> UiState.update { it.copy(message = I18nManager["message.export_success"] + " → $path") } }
                 .onFailure { e -> UiState.update { it.copy(error = e.message) } }
         }
     }
 
     fun setThemeMode(mode: ThemeModeManager) {
-        scope.launch {
-            PreferencesManager.saveUserPreferences(mode, UiState.value.language, UiState.value.showAllItems, UiState.value.ignoreThreeStarExport)
-            UiState.update { it.copy(themeMode = mode) }
-        }
+        updatePreferences { it.copy(themeMode = mode) }
     }
 
     fun setLanguage(lang: String) {
-        scope.launch {
-            PreferencesManager.saveUserPreferences(UiState.value.themeMode, lang, UiState.value.showAllItems, UiState.value.ignoreThreeStarExport)
-            I18nManager.load(lang)
-            UiState.update { it.copy(language = lang) }
-        }
+        updatePreferences { it.copy(language = lang) }
     }
 
     fun setShowAllItems(show: Boolean) {
-        scope.launch {
-            PreferencesManager.saveUserPreferences(UiState.value.themeMode, UiState.value.language, show, UiState.value.ignoreThreeStarExport)
-            UiState.update { it.copy(showAllItems = show) }
-        }
+        updatePreferences { it.copy(showAllItems = show) }
     }
 
     fun setIgnoreThreeStarExport(ignore: Boolean) {
+        updatePreferences { it.copy(ignoreThreeStarExport = ignore) }
+    }
+
+    /**
+     * A function to update any user's preference.
+     * Callback accepts the current UI state, returning it after update.
+     *
+     * We use lock to ensure that reading after acquiring the lock so queued changes retain earliersettings.
+     */
+    private fun updatePreferences(transform: (AppUiState) -> AppUiState) {
         scope.launch {
-            PreferencesManager.saveUserPreferences(UiState.value.themeMode, UiState.value.language, UiState.value.showAllItems, ignore)
-            UiState.update { it.copy(ignoreThreeStarExport = ignore) }
+            preferencesMutex.withLock {
+                val current = UiState.value
+                val updated = transform(current)
+                PreferencesManager.saveUserPreferences(
+                    updated.themeMode, updated.language, updated.showAllItems, updated.ignoreThreeStarExport,
+                )
+                // Preference persistence wraps failures, including cancellation, in Result.
+                currentCoroutineContext().ensureActive()
+                if (updated.language != current.language) I18nManager.load(updated.language)
+                UiState.update {
+                    // Preserve account data, navigation, and messages changed during the IO suspension.
+                    it.copy(
+                        themeMode = updated.themeMode,
+                        language = updated.language,
+                        showAllItems = updated.showAllItems,
+                        ignoreThreeStarExport = updated.ignoreThreeStarExport,
+                    )
+                }
+            }
         }
     }
 
@@ -367,10 +446,12 @@ class AppViewModel {
                 refreshUidList()
                 val next = UiState.value.uids.firstOrNull()
                 if (next != null) selectUid(next)
-                else UiState.update {
-                    it.copy(selectedUid = null, records = emptyList(), stats = null, pityState = null,
-                        bannerStats = emptyList(), timeline = emptyList(), luck = null, consumption = emptyList(),
-                        streakAnalysis = null, goldHistory = emptyMap(), calendarDays = emptyMap())
+                else {
+                    ++selectionRequest
+                    selectionJob?.cancel()
+                    UiState.update {
+                        it.nullAllData().copy(selectedUid = null, isLoading = false)
+                    }
                 }
                 invalidateAnalyticsCache()
             }.onFailure { e ->
@@ -384,41 +465,42 @@ class AppViewModel {
         val uids = Database.listAllUids().getOrDefault(emptyList())
         UiState.update { it.copy(uids = uids) }
         if (UiState.value.selectedUid == null && uids.isNotEmpty()) {
-            loadUid(uids.first())
+            startUidLoad(uids.first())
         }
     }
 
-    private suspend fun loadUid(uid: String) {
+    private data class LoadedAccount(
+        val records: List<GachaRecord>,
+        val stats: UserStatistics?,
+        val pityState: PityState,
+        val luck: LuckAnalysis,
+        val consumption: List<MonthlyConsumption>,
+        val streakAnalysis: StreakAnalysis,
+    )
+
+    private suspend fun loadUid(uid: String): Result<LoadedAccount> =
         withContext(Dispatchers.IO) {
-            Database.search(uid).onSuccess { data ->
+            val result = Database.search(uid)
+            currentCoroutineContext().ensureActive()
+            result.mapCatching { data ->
                 val records = data?.first ?: emptyList()
-                val stats = data?.second
-                UiState.update {
-                    it.copy(
-                        isLoading = false,
-                        selectedUid = uid,
-                        records = records,
-                        stats = stats,
-                        pityState = records.pityState(),
-                        luck = records.analyzeLuck(),
-                        consumption = records.monthlyConsumption(),
-                        streakAnalysis = records.analyzeStreaks(),
-                    )
-                }
-                invalidateAnalyticsCache()
-            }.onFailure { e ->
-                LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to load uid=$uid", e))
-                UiState.update { it.copy(isLoading = false, error = e.message) }
+                LoadedAccount(
+                    records = records, stats = data?.second,
+                    pityState = records.pityState(), luck = records.analyzeLuck(),
+                    consumption = records.monthlyConsumption(), streakAnalysis = records.analyzeStreaks(),
+                )
             }
         }
-    }
 
     fun updateStats() {
         val uid = UiState.value.selectedUid ?: return
         scope.launch {
+            val request = selectionRequest
             withContext(Dispatchers.IO) {
                 Database.updateStats(uid).onSuccess {
-                    if (UiState.value.selectedUid == uid) loadUid(uid)
+                    withContext(Dispatchers.Main) {
+                        if (selectionRequest == request && UiState.value.selectedUid == uid) startUidLoad(uid)
+                    }
                 }.onFailure { e ->
                     LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to update stats for uid=$uid", e))
                 }
@@ -430,11 +512,14 @@ class AppViewModel {
         val uid = UiState.value.selectedUid ?: return
         //AppLogger.debug("begin reassign id")
         scope.launch {
+            val request = selectionRequest
             withContext(Dispatchers.IO) {
                 Database.updateRecords(uid) { records ->
                     records.map { it.copy(itemID = ItemTranslator.getIdByName(it.name).ifBlank { it.itemID }) }
                 }.onSuccess {
-                    if (UiState.value.selectedUid == uid) loadUid(uid)
+                    withContext(Dispatchers.Main) {
+                        if (selectionRequest == request && UiState.value.selectedUid == uid) startUidLoad(uid)
+                    }
                 }.onFailure { e ->
                     LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to update records for uid=$uid", e))
                 }

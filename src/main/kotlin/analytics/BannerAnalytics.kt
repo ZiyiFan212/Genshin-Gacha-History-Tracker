@@ -243,11 +243,10 @@ fun List<GachaRecord>.monthlyConsumption(): List<MonthlyConsumption> {
  * pull date to the current date in an integer.
  * Otherwise, the gap is calculated through iterating the list.
  */
-fun List<GachaRecord>.longestNoPullIntervalDays(): Int {
+fun List<GachaRecord>.longestNoPullIntervalDays(today: LocalDate = LocalDate.now(SERVER_TIME_OFFSET)): Int {
     if (this.isEmpty()) return 0
 
     // Handle if there's only one pull in the list.
-    val today = LocalDate.now(SERVER_TIME_OFFSET)
     if (this.size == 1){
         val pullDate = LocalDate.parse(this[0].time.substring(0, 10))
         return ChronoUnit.DAYS.between(pullDate, today).toInt()

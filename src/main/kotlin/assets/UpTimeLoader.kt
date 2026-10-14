@@ -27,17 +27,25 @@ object UpTimeLoader {
 
     private val json = Json { ignoreUnknownKeys = true }
     private var upTimeMap = emptyMap<String, UpTimeEntry>()
+    @Volatile
     private var initialized = false
+    private val loadLock = Any()
 
     fun isLoaded(): Boolean = initialized
 
-    fun load(): Result<Unit> = runCatching {
-        val text = UpTimeLoader::class.java.classLoader
-            .getResourceAsStream(UP_TIME_PATH.trimStart('/'))
-            ?.bufferedReader()?.readText()
-            ?: throw IllegalStateException("Missing upTime.json")
-        upTimeMap = json.decodeFromString<Map<String, UpTimeEntry>>(text)
-        initialized = true
+    fun load(): Result<Unit> {
+        if (initialized) return Result.success(Unit)
+        return synchronized(loadLock) {
+            if (initialized) return@synchronized Result.success(Unit)
+            runCatching {
+                val text = UpTimeLoader::class.java.classLoader
+                    .getResourceAsStream(UP_TIME_PATH.trimStart('/'))
+                    ?.bufferedReader()?.readText()
+                    ?: throw IllegalStateException("Missing upTime.json")
+                upTimeMap = json.decodeFromString<Map<String, UpTimeEntry>>(text)
+                initialized = true
+            }
+        }
     }
 
     fun getEntry(itemId: String): UpTimeEntry? {

@@ -51,33 +51,52 @@ public class Fetcher implements AutoCloseable {
     private static final Random rand = new Random();
 
     public Fetcher(String authKeyUrl) throws Exception {
+        setKeys(authKeyUrl);
         this.client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(15))
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
-        setKeys(authKeyUrl);
     }
 
     public @NotNull String getUid() { return uid; }
 
+    // Package-private resource seam for deterministic interruption/cleanup tests.
+    Fetcher(String authKeyUrl, HttpClient client) throws InvalidAuthkeyUrlException {
+        setKeys(authKeyUrl);
+        this.client = client;
+    }
+
     @Override
     public void close() {
-        if (client != null ) {
-            client.close();
+        client.shutdown();
+        try {
+            if (!client.awaitTermination(Duration.ofSeconds(3))) {
+                client.shutdownNow();
+                if (!client.awaitTermination(Duration.ofSeconds(3))) {
+                    LogWriter.Companion.getInstance().tryLog(new LogBody(Severity.WARN,
+                            "HTTP client termination timed out after shutdownNow", null, LocalDateTime.now()));
+                }
+            }
+        } catch (InterruptedException e) {
+            client.shutdownNow();
+            Thread.currentThread().interrupt();
         }
     }
 
-    public List<GachaRecord> getAllRecords() throws GachaServerConnectionException, AuthkeyExpiredException {
+    public List<GachaRecord> getAllRecords() throws GachaServerConnectionException, AuthkeyExpiredException, InterruptedException {
         uid = "";
         List<GachaRecord> gachaRecords = new ArrayList<>();
         int currentBanner = 0;
 
         try {
             for (currentBanner = 0; currentBanner < Banner_Type.length; currentBanner++) {
+                if (Thread.currentThread().isInterrupted()) throw new InterruptedException("Capture interrupted");
                 gachaRecords.addAll(fetchSingleBanner(Banner_Type[currentBanner]));
             }
             return gachaRecords;
         } catch (AuthkeyExpiredException e) {
+            throw e;
+        } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
             throw new GachaServerConnectionException(
@@ -107,6 +126,7 @@ public class Fetcher implements AutoCloseable {
         List<GachaRecord> currentBannerRecords = new ArrayList<>();
 
         while (true) {
+            if (Thread.currentThread().isInterrupted()) throw new InterruptedException("Capture interrupted");
             int retries = 0;
             JsonNode jsonNode = null;
 
@@ -131,6 +151,7 @@ public class Fetcher implements AutoCloseable {
 
                     HttpRequest request = HttpRequest.newBuilder()
                             .uri(URI.create(urlBuilder.toString()))
+                            .timeout(Duration.ofSeconds(20))
                             .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36")
                             .header("Referer", "https://webstatic.mihoyo.com/")
                             .GET()
@@ -164,12 +185,11 @@ public class Fetcher implements AutoCloseable {
 
                 } catch (TooFrequentRequestException e) {
                     retries++;
-                    LogWriter.Companion.getInstance().tryLog(new LogBody(Severity.WARN, "Too frequent retry!", null, LocalDateTime.now()));
-                    Thread.sleep(TOO_FREQUENT_DELAY_MS * retries);
                     if (retries >= MAX_RETRIES) {
-                        client.close();
                         throw e;
                     }
+                    LogWriter.Companion.getInstance().tryLog(new LogBody(Severity.WARN, "Too frequent retry!", null, LocalDateTime.now()));
+                    Thread.sleep((long) TOO_FREQUENT_DELAY_MS * retries);
                 }
             }
 

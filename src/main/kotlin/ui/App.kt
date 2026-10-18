@@ -92,7 +92,7 @@ fun FrameWindowScope.App(viewModel: AppViewModel,
     }
 
     GenshinTheme(darkTheme = isDarkTheme) {
-        if (state.isLoading && state.uids.isEmpty()) {
+        if (state.isShuttingDown || (state.isLoading && state.uids.isEmpty())) {
             Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator()
@@ -110,10 +110,7 @@ fun FrameWindowScope.App(viewModel: AppViewModel,
                 uids = state.uids,
                 selectedUid = state.selectedUid,
                 onSelectUid = viewModel::selectUid,
-                onExit = {
-                    viewModel.shutdown()
-                    onExit()
-                },
+                onExit = onExit,
                 windowState = windowState,
             )
 
@@ -195,10 +192,7 @@ fun FrameWindowScope.App(viewModel: AppViewModel,
                                 onUpdateStats = viewModel::updateStats,
                                 onUpdateRecords = viewModel::updateRecords,
                                 onDeleteUid = viewModel::deleteCurrentUid,
-                                onExit = {
-                                    viewModel.shutdown()
-                                    onExit()
-                                },
+                                onExit = onExit,
                                 hasUid = state.selectedUid != null,
                                 modifier = Modifier.weight(1f),
                             )

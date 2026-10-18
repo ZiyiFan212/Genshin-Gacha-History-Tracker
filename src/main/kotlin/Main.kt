@@ -14,8 +14,7 @@ fun main() = application {
 
     Window(
         onCloseRequest = {
-            viewModel.shutdown()
-            exitApplication()
+            viewModel.shutdown { exitApplication() }
         },
         title = "抽卡助手",
         undecorated = true,
@@ -23,7 +22,7 @@ fun main() = application {
     ) {
         App(
             viewModel,
-            onExit = ::exitApplication,
+            onExit = { viewModel.shutdown { exitApplication() } },
             windowState = windowState,
         )
     }

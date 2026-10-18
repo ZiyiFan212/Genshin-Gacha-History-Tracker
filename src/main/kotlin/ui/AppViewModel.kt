@@ -80,6 +80,7 @@ data class ImportResult(
 
 data class AppUiState(
     val isLoading: Boolean = true,
+    val isShuttingDown: Boolean = false,
     val error: String? = null,
     val message: String? = null,
     val currentScreen: AppScreen = AppScreen.HOME,
@@ -106,11 +107,14 @@ class AppViewModel internal constructor(
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main),
     private val searchAccount: suspend (String) -> Result<Pair<List<GachaRecord>, UserStatistics>?> = Database::search,
     private val today: () -> LocalDate = { LocalDate.now(utilities.SERVER_TIME_OFFSET) },
+    private val closeDatabase: () -> Unit = Database::dbClose,
 ) {
     private val uiState = MutableStateFlow(AppUiState())
     val state: StateFlow<AppUiState> = uiState.asStateFlow()
     private val proxyService = ProxyService()
     private val preferencesMutex = Mutex()
+    private val shutdownLock = Any()
+    private var shutdownJob: Job? = null
 
     // Computed off Main and published with the matching records in one state update.
     data class CachedAnalytics(
@@ -153,7 +157,9 @@ class AppViewModel internal constructor(
                 val result = AppBootstrap.initialize()
                 currentCoroutineContext().ensureActive()
                 result.onSuccess {
-                    val prefs = PreferencesManager.loadUserPreferences().getOrDefault(PreferencesManager.UserPreferences())
+                    val prefs = PreferencesManager.loadUserPreferences()
+                        .onFailure { it.rethrowIfCancelled() }
+                        .getOrDefault(PreferencesManager.UserPreferences())
                     currentCoroutineContext().ensureActive()
                     I18nManager.load(prefs.language)
                     uiState.update {
@@ -173,6 +179,7 @@ class AppViewModel internal constructor(
                 startDateRefresh()
                 LogWriter.instance.tryLog(LogBody(Severity.INFO, "Application initialized"))
             }.onFailure { e ->
+                e.rethrowIfCancelled()
                 LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Initialization failed", e))
                 uiState.update { it.copy(isLoading = false, error = e.message ?: "Init failed") }
             }
@@ -219,6 +226,7 @@ class AppViewModel internal constructor(
                     )
                 }
             }.onFailure { e ->
+                e.rethrowIfCancelled()
                 LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to load uid=$uid", e))
                 uiState.update { it.copy(isLoading = false, error = e.message) }
             }
@@ -259,6 +267,7 @@ class AppViewModel internal constructor(
                     )
                 }
             }.onFailure { e ->
+                e.rethrowIfCancelled()
                 LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to analyze uid=$uid", e))
                 uiState.update { it.copy(isLoading = false, error = e.message) }
             }
@@ -312,6 +321,7 @@ class AppViewModel internal constructor(
                         selectUid(uid)
                     }
                 }.onFailure { e ->
+                    e.rethrowIfCancelled()
                     LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Import failed", e))
                     uiState.update {
                         it.copy(isLoading = false, error = if (e is ImportInvalidatedException) e.safeUserMessage() else e.message ?: "Import failed")
@@ -367,6 +377,7 @@ class AppViewModel internal constructor(
                             navigate(AppScreen.TIMELINE)
                         }
                     }.onFailure { e ->
+                        e.rethrowIfCancelled()
                         LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Proxy capture failed", e))
                         uiState.update { it.copy(error = e.safeUserMessage()) }
                     }
@@ -389,6 +400,7 @@ class AppViewModel internal constructor(
                     LogWriter.instance.tryLog(LogBody(Severity.INFO, "UIGF export: ignoreThreeStar is always false for UIGF format, exported to $path"))
                 }
                 .onFailure { e ->
+                    e.rethrowIfCancelled()
                     LogWriter.instance.tryLog(LogBody(Severity.ERROR, "UIGF export failed", e))
                     uiState.update { it.copy(error = e.message) }
                 }
@@ -406,6 +418,7 @@ class AppViewModel internal constructor(
                 uiState.update { it.copy(message = I18nManager["message.export_success"]) }
                 LogWriter.instance.tryLog(LogBody(Severity.INFO, "Excel exported for uid=$uid"))
             }.onFailure { e ->
+                e.rethrowIfCancelled()
                 LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Excel export failed", e))
                 uiState.update { it.copy(error = e.message) }
             }
@@ -419,7 +432,7 @@ class AppViewModel internal constructor(
         scope.launch(Dispatchers.IO) {
             CsvExporter.export(records, uid, ignoreThreeStar = snapshot.ignoreThreeStarExport)
                 .onSuccess { path -> uiState.update { it.copy(message = I18nManager["message.export_success"] + " → $path") } }
-                .onFailure { e -> uiState.update { it.copy(error = e.message) } }
+                .onFailure { e -> e.rethrowIfCancelled(); uiState.update { it.copy(error = e.message) } }
         }
     }
 
@@ -430,25 +443,17 @@ class AppViewModel internal constructor(
         scope.launch(Dispatchers.IO) {
             HtmlExporter.export(records, uid, ignoreThreeStar = snapshot.ignoreThreeStarExport)
                 .onSuccess { path -> uiState.update { it.copy(message = I18nManager["message.export_success"] + " → $path") } }
-                .onFailure { e -> uiState.update { it.copy(error = e.message) } }
+                .onFailure { e -> e.rethrowIfCancelled(); uiState.update { it.copy(error = e.message) } }
         }
     }
 
-    fun setThemeMode(mode: ThemeModeManager) {
-        updatePreferences { it.copy(themeMode = mode) }
-    }
+    fun setThemeMode(mode: ThemeModeManager) { updatePreferences { it.copy(themeMode = mode) }}
 
-    fun setLanguage(lang: String) {
-        updatePreferences { it.copy(language = lang) }
-    }
+    fun setLanguage(lang: String) {updatePreferences { it.copy(language = lang) }}
 
-    fun setShowAllItems(show: Boolean) {
-        updatePreferences { it.copy(showAllItems = show) }
-    }
+    fun setShowAllItems(show: Boolean) {updatePreferences { it.copy(showAllItems = show) }}
 
-    fun setIgnoreThreeStarExport(ignore: Boolean) {
-        updatePreferences { it.copy(ignoreThreeStarExport = ignore) }
-    }
+    fun setIgnoreThreeStarExport(ignore: Boolean) {updatePreferences { it.copy(ignoreThreeStarExport = ignore) }}
 
     /**
      * A function to update any user's preference.
@@ -463,7 +468,7 @@ class AppViewModel internal constructor(
                 val updated = transform(current)
                 PreferencesManager.saveUserPreferences(
                     updated.themeMode, updated.language, updated.showAllItems, updated.ignoreThreeStarExport,
-                )
+                ).onFailure { it.rethrowIfCancelled() }
                 // Preference persistence wraps failures, including cancellation, in Result.
                 currentCoroutineContext().ensureActive()
                 if (updated.language != current.language) I18nManager.load(updated.language)
@@ -480,11 +485,23 @@ class AppViewModel internal constructor(
         }
     }
 
-    // database disconnected & all coroutines canceled
-    fun shutdown() {
-        LogWriter.instance.tryLog(LogBody(Severity.INFO, "Application shutting down: disconnecting the database and cancelling all running coroutines."))
-        scope.cancel()
-        Database.dbClose()
+    /**
+     * The shutdown function. It cancels all sub-coroutines and disconnect the database until
+     * all businesses are completed.
+     * Note that the shutdown coroutine must outlive the business scope!!
+     */
+    fun shutdown(onComplete: () -> Unit = {}): Job = synchronized(shutdownLock) {
+        shutdownJob?.let { return@synchronized it }
+        LogWriter.instance.tryLog(LogBody(Severity.INFO, "Application shutting down: tasks joining before disconnecting."))
+        uiState.update { it.copy(isShuttingDown = true) }
+        // get parent job
+        val businessJob = requireNotNull(scope.coroutineContext[Job])
+        businessJob.cancel()
+        CoroutineScope(Dispatchers.Main).launch {
+            businessJob.join()
+            withContext(Dispatchers.IO) { closeDatabase() }
+            onComplete()
+        }.also { shutdownJob = it }
     }
 
     fun deleteCurrentUid() {
@@ -503,14 +520,52 @@ class AppViewModel internal constructor(
                     }
                 }
             }.onFailure { e ->
+                e.rethrowIfCancelled()
                 LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to delete uid=$uid", e))
                 uiState.update { it.copy(error = e.message) }
             }
         }
     }
 
+    fun updateStats() {
+        val uid = uiState.value.selectedUid ?: return
+        scope.launch {
+            val revision = accountRevision
+            withContext(Dispatchers.IO) {
+                Database.updateStats(uid).onSuccess {
+                    withContext(Dispatchers.Main) {
+                        if (accountRevision == revision && uiState.value.selectedUid == uid) startUidLoad(uid)
+                    }
+                }.onFailure { e ->
+                    e.rethrowIfCancelled()
+                    LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to update stats for uid=$uid", e))
+                }
+            }
+        }
+    }
+
+    fun updateRecords() {
+        val uid = uiState.value.selectedUid ?: return
+
+        scope.launch {
+            val revision = accountRevision
+            withContext(Dispatchers.IO) {
+                Database.updateRecords(uid) { records ->
+                    records.map { it.copy(itemID = ItemTranslator.getIdByName(it.name).ifBlank { it.itemID }) }
+                }.onSuccess {
+                    withContext(Dispatchers.Main) {
+                        if (accountRevision == revision && uiState.value.selectedUid == uid) startUidLoad(uid)
+                    }
+                }.onFailure { e ->
+                    e.rethrowIfCancelled()
+                    LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to update records for uid=$uid", e))
+                }
+            }
+        }
+    }
+
     private suspend fun refreshUidList() {
-        val uids = Database.listAllUids().getOrDefault(emptyList())
+        val uids = Database.listAllUids().onFailure { it.rethrowIfCancelled() }.getOrDefault(emptyList())
         uiState.update { it.copy(uids = uids) }
         if (uiState.value.selectedUid == null && uids.isNotEmpty()) {
             startUidLoad(uids.first())
@@ -524,7 +579,7 @@ class AppViewModel internal constructor(
             currentCoroutineContext().ensureActive()
             result.fold(
                 onSuccess = { data -> computeAccount(data?.first ?: emptyList(), data?.second, today()) },
-                onFailure = { Result.failure(it) },
+                onFailure = { it.rethrowIfCancelled(); Result.failure(it) },
             )
         }
 
@@ -550,41 +605,12 @@ class AppViewModel internal constructor(
         }
     }
 
-    fun updateStats() {
-        val uid = uiState.value.selectedUid ?: return
-        scope.launch {
-            val revision = accountRevision
-            withContext(Dispatchers.IO) {
-                Database.updateStats(uid).onSuccess {
-                    withContext(Dispatchers.Main) {
-                        if (accountRevision == revision && uiState.value.selectedUid == uid) startUidLoad(uid)
-                    }
-                }.onFailure { e ->
-                    LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to update stats for uid=$uid", e))
-                }
-            }
-        }
-    }
-
-    fun updateRecords() {
-        val uid = uiState.value.selectedUid ?: return
-
-        scope.launch {
-            val revision = accountRevision
-            withContext(Dispatchers.IO) {
-                Database.updateRecords(uid) { records ->
-                    records.map { it.copy(itemID = ItemTranslator.getIdByName(it.name).ifBlank { it.itemID }) }
-                }.onSuccess {
-                    withContext(Dispatchers.Main) {
-                        if (accountRevision == revision && uiState.value.selectedUid == uid) startUidLoad(uid)
-                    }
-                }.onFailure { e ->
-                    LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to update records for uid=$uid", e))
-                }
-            }
-        }
-    }
-
 }
 
 private fun <T> Result<T>.getOrDefault(default: T): T = getOrElse { default }
+
+// Result/runCatching may wrap cancellation. Never publish it as a business failure.
+private suspend fun Throwable.rethrowIfCancelled() {
+    if (this is kotlinx.coroutines.CancellationException) throw this
+    currentCoroutineContext().ensureActive()
+}

@@ -32,8 +32,8 @@ internal class ProxyLifecycle(
                     val descendants = child.descendants().use { it.toList() }
                     child.destroyForcibly()
                     descendants.forEach { it.destroyForcibly() }
-                    check(child.waitFor(10, TimeUnit.SECONDS)) { "Capture process did not stop; snapshot retained" }
-                    descendants.forEach { it.onExit().get(10, TimeUnit.SECONDS) }
+                    check(child.waitFor(8, TimeUnit.SECONDS)) { "Capture process did not stop; snapshot retained" }
+                    descendants.forEach { it.onExit().get(8, TimeUnit.SECONDS) }
                 }
                 recover()
             }

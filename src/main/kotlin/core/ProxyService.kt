@@ -4,6 +4,8 @@ import assets.ItemTranslator
 import fetcher.Fetcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.CancellationException
 import logger.LogBody
 import model.Severity
 import logger.LogWriter
@@ -53,6 +55,8 @@ class ProxyService {
                 }
                 try {
                     proxyReceiver.startServer()
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     return@withContext Result.failure(ProxyException(ProxyExceptionType.PROXY_START_FAILED, cause = e))
                 }
@@ -68,7 +72,8 @@ class ProxyService {
                             environment()["GENSHIN_CAPTURE_TOKEN"] = proxyReceiver.getAuthToken()
                             environment()["GENSHIN_PROXY_PARENT_PIPE"] = "1"
                         }
-                        .redirectErrorStream(true))
+                        .redirectErrorStream(true)
+                        .redirectOutput(ProcessBuilder.Redirect.DISCARD))
                 } catch (e: IOException) {
                     return@withContext Result.failure(ProxyException(ProxyExceptionType.PROXY_START_FAILED, cause = e))
                 }
@@ -77,9 +82,9 @@ class ProxyService {
                 streamProxyDebugOutput(proxyProcess)
                 debug("ProxyService: waiting for Node exit (120s); proxy=8080, receiver=3000")
 
-                val finished = proxyProcess.waitFor(120, TimeUnit.SECONDS)
+                val finished = runInterruptible { proxyProcess.waitFor(120, TimeUnit.SECONDS) }
                 if (!finished) {
-                    debug("ProxyService: Node exit timed out; URL received=${proxyReceiver.getCapturedAuthKeyUrl() != null}")
+                    //debug("ProxyService: Node exit timed out; URL received=${proxyReceiver.getCapturedAuthKeyUrl() != null}")
                     return@withContext Result.failure(ProxyException(ProxyExceptionType.TIMEOUT))
                 }
 
@@ -106,7 +111,7 @@ class ProxyService {
                 debug("ProxyService: Fetcher initialized; query preparation completed")
 
                 val javaRecords = try {
-                    fetcher.getAllRecords()
+                    runInterruptible { fetcher.getAllRecords() }
                 } catch (e: IOException) {
                     return@withContext Result.failure(ProxyException(ProxyExceptionType.SERVER_CONNECTION, cause = e))
                 }
@@ -125,28 +130,24 @@ class ProxyService {
 
                 debug("ProxyService: fetch completed; records=${records.size}, UID present=${fetcher.uid.isNotBlank()}")
                 Result.success(fetcher.getUid() to records)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: AuthkeyExpiredException) {
                 Result.failure(ProxyException(ProxyExceptionType.AUTHKEY_EXPIRED, cause = e))
             } catch (e: GachaServerConnectionException) {
                 Result.failure(ProxyException(ProxyExceptionType.SERVER_CONNECTION, cause = e))
             } catch (e: InvalidAuthkeyUrlException) {
                 Result.failure(ProxyException(ProxyExceptionType.INVALID_AUTHKEY_URL, cause = e))
-            } catch (e: InterruptedException) {
-                Thread.currentThread().interrupt()
-                Result.failure(ProxyException(ProxyExceptionType.OPERATION_CANCELLED, cause = e))
             } catch (e: Exception) {
                 LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Unexpected capture error", e))
                 Result.failure(ProxyException(ProxyExceptionType.FETCH_FAILED, cause = e))
             } finally {
-                try {
-                    lifecycle.close()
-                } catch (e: Exception) {
-                    LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Capture cleanup failed; session snapshot retained", e))
-                } finally {
-                    proxyReceiver.stopServer()
-                    fetcher?.close()
-                }
-
+                runCatching { lifecycle.close() }
+                    .onFailure { LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Proxy lifecycle cleanup failed; session snapshot retained", it)) }
+                runCatching { proxyReceiver.stopServer() }
+                    .onFailure { LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Receiver stop failed", it)) }
+                runCatching { fetcher?.close() }
+                    .onFailure { LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Fetcher close failed", it)) }
             }
         }
     }
@@ -158,10 +159,12 @@ class ProxyService {
                 .directory(File(System.getProperty("user.dir")))
                 .apply { environment()["GENSHIN_PROXY_SESSION"] = sessionId }
                 .redirectErrorStream(true)
+                .redirectOutput(ProcessBuilder.Redirect.DISCARD)
                 .start()
             streamProxyDebugOutput(process)
             if (!process.waitFor(30, TimeUnit.SECONDS)) {
                 process.destroyForcibly()
+                process.waitFor(5, TimeUnit.SECONDS)
                 LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Session proxy recovery timed out; snapshot retained"))
             } else if (process.exitValue() != 0) {
                 LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Session proxy recovery failed; snapshot retained"))
@@ -170,6 +173,7 @@ class ProxyService {
             LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to recover capture proxy session", e))
         }
     }
+
 
     private fun streamProxyDebugOutput(process: Process) {
         Thread {
@@ -190,5 +194,7 @@ class ProxyService {
             start()
         }
     }
+
+
 
 }

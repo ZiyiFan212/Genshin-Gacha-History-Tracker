@@ -19,3 +19,8 @@ class TooFrequentRequestException @JvmOverloads constructor(
     message: String? = null,
     cause: Throwable? = null,
 ) : Exception(message, cause)
+
+class HttpRequestTimeoutException @JvmOverloads constructor(
+    message: String? = null,
+    cause: Throwable? = null,
+) : Exception(message, cause)

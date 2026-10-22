@@ -1,9 +1,6 @@
 package fetcher;
 
-import core.AuthkeyExpiredException;
-import core.GachaServerConnectionException;
-import core.InvalidAuthkeyUrlException;
-import core.TooFrequentRequestException;
+import core.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
@@ -17,9 +14,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.net.http.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -27,6 +22,7 @@ import java.util.ArrayList;
 import java.util.InvalidPropertiesFormatException;
 import java.util.List;
 import java.util.Random;
+import java.util.HashSet;
 
 /**
  * Partially refactored from the last version of genshin tracker.
@@ -35,17 +31,16 @@ import java.util.Random;
  */
 public class Fetcher implements AutoCloseable {
 
-    private static final int Page_Size = 20;
     private static final String[] Banner_Type =
             {
                     AppConstants.CHARACTER_EVENT_BANNER, AppConstants.CHARACTER_EVENT_BANNER2,
                     AppConstants.WEAPON_EVENT_BANNER, AppConstants.CHRONICLE_EVENT_BANNER,
                     AppConstants.STANDARD_EVENT_BANNER, AppConstants.NOVICE_EVENT_BANNER,
             };
-    private static final int Page_Number = 1;
-    private static final int Base_Delay = 300;
-    private static final String apiDomainCN = "https://public-operation-hk4e.mihoyo.com";
+
+    private static final String API_DOMAIN_CN = "https://public-operation-hk4e.mihoyo.com";
     private String cleanQueryString = "";
+
     private static final ObjectMapper mapper = new ObjectMapper();
     private final HttpClient client;
     private static final Random rand = new Random();
@@ -60,11 +55,14 @@ public class Fetcher implements AutoCloseable {
 
     public @NotNull String getUid() { return uid; }
 
-    // Package-private resource seam for deterministic interruption/cleanup tests.
+    // Offline HTTP injection test ONLY
+    /*
     Fetcher(String authKeyUrl, HttpClient client) throws InvalidAuthkeyUrlException {
         setKeys(authKeyUrl);
         this.client = client;
     }
+
+     */
 
     @Override
     public void close() {
@@ -83,7 +81,7 @@ public class Fetcher implements AutoCloseable {
         }
     }
 
-    public List<GachaRecord> getAllRecords() throws GachaServerConnectionException, AuthkeyExpiredException, InterruptedException {
+    public List<GachaRecord> getAllRecords() throws GachaServerConnectionException, AuthkeyExpiredException, InterruptedException, HttpRequestTimeoutException {
         uid = "";
         List<GachaRecord> gachaRecords = new ArrayList<>();
         int currentBanner = 0;
@@ -94,22 +92,26 @@ public class Fetcher implements AutoCloseable {
                 gachaRecords.addAll(fetchSingleBanner(Banner_Type[currentBanner]));
             }
             return gachaRecords;
+        } catch (InterruptedException e) {// interruption should be caught and then notify the service uniquely.
+            throw e;
         } catch (AuthkeyExpiredException e) {
             throw e;
-        } catch (InterruptedException e) {
+        } catch (HttpRequestTimeoutException e) {
             throw e;
         } catch (Exception e) {
-            throw new GachaServerConnectionException(
-                    "Error occurred in reading the banner: " + Banner_Type[currentBanner], e);
+            throw new GachaServerConnectionException("Error occurred in reading the banner: " + Banner_Type[currentBanner], e);
         }
     }
 
+    private static final int PAGE_SIZE = 20;
+    private static final int PAGE_NUMBER = 1;
+    private static final int BASE_DELAY = 300;
     private static final int MAX_RETRIES = 3;
     private static final int TOO_FREQUENT_DELAY_MS = 5000;
     private String uid = "";
 
     /**
-     * Fetch gacha records for a single banner
+     * Fetch gacha records for a single banner.
      *
      * @param bannerType Banner type, e.g., "301" (character wish), "302" (weapon wish)
      * @return List of gacha records for the banner
@@ -120,9 +122,10 @@ public class Fetcher implements AutoCloseable {
      * @throws TooFrequentRequestException Too frequent request exception
      */
     private List<GachaRecord> fetchSingleBanner(String bannerType)
-            throws IOException, InterruptedException, GachaServerConnectionException, AuthkeyExpiredException, TooFrequentRequestException {
+            throws IOException, InterruptedException, GachaServerConnectionException, AuthkeyExpiredException, TooFrequentRequestException, HttpRequestTimeoutException {
 
         String endID = null;
+        var seenIds = new HashSet<String>();
         List<GachaRecord> currentBannerRecords = new ArrayList<>();
 
         while (true) {
@@ -132,15 +135,16 @@ public class Fetcher implements AutoCloseable {
 
             while (retries < MAX_RETRIES) {
                 try {
+                    // Build URL
                     long currentTimestamp = System.currentTimeMillis() / 1000;
-                    StringBuilder urlBuilder = new StringBuilder(apiDomainCN);
+                    StringBuilder urlBuilder = new StringBuilder(API_DOMAIN_CN);
                     urlBuilder.append("/gacha_info/api/getGachaLog?")
                             .append(cleanQueryString)
                             .append("&t=").append(currentTimestamp)
                             .append("&timestamp=").append(currentTimestamp)
                             .append("&gacha_type=").append(bannerType)
-                            .append("&page=").append(Page_Number)
-                            .append("&size=").append(Page_Size);
+                            .append("&page=").append(PAGE_NUMBER)
+                            .append("&size=").append(PAGE_SIZE);
 
                     if (endID != null && !endID.isEmpty()) {
                         urlBuilder.append("&end_id=").append(endID);
@@ -149,53 +153,66 @@ public class Fetcher implements AutoCloseable {
                     }
                     LogWriter.Companion.getInstance().tryLog(new LogBody(Severity.INFO, urlBuilder.substring(0, 20), null, LocalDateTime.now()));
 
+                    // Build HTTP request. Note that headers are essential to not be treated as script by Mihoyo server.
                     HttpRequest request = HttpRequest.newBuilder()
                             .uri(URI.create(urlBuilder.toString()))
-                            .timeout(Duration.ofSeconds(20))
+                            .timeout(Duration.ofSeconds(15))
                             .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36")
                             .header("Referer", "https://webstatic.mihoyo.com/")
                             .GET()
                             .build();
-                    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+                    HttpResponse<String> response;
+                    try {
+                        response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                    } catch (HttpTimeoutException e) {
+                        throw new HttpRequestTimeoutException("Request Timeout: ", e);
+                    }
 
                     if (response.statusCode() != 200) {
-                        throw new GachaServerConnectionException(
-                                "Error occurred in connecting with the server! Status: " + response.statusCode());
+                        throw new GachaServerConnectionException("Error occurred in connecting with the server! Status: " + response.statusCode());
                     }
 
                     jsonNode = mapper.readTree(response.body());
-                    if (jsonNode == null) throw new InvalidPropertiesFormatException("Returning json is empty");
+                    if (jsonNode == null) {
+                        throw new InvalidPropertiesFormatException("Returning json is empty");
+                    }
+
                     JsonNode retCodeNode = jsonNode.get("retcode");
                     if (retCodeNode != null && retCodeNode.asInt() != 0) {
                         String message = jsonNode.has("message") ? jsonNode.get("message").asText() : "Unknown error";
 
                         int retcode = retCodeNode.asInt();
                         if ("authkey timeout".equalsIgnoreCase(message) || "authkey error".equalsIgnoreCase(message)) {
-                            throw new AuthkeyExpiredException(
-                                    "Authkey expired or invalid. Please open wish history in-game again.");
+                            throw new AuthkeyExpiredException("Authkey expired or invalid. Please open wish history again.");
                         }
                         if (retcode == -101 || message.contains("visit too frequently") || message.contains("too frequent")) {
                             throw new TooFrequentRequestException("Requests too frequent");
                         }
 
-                        throw new GachaServerConnectionException(
-                                "API Error - Retcode: " + retcode + ", Message: " + message);
+                        throw new GachaServerConnectionException("Error! Retcode: " + retcode + ", Message: " + message);
                     }
                     break;
 
-                } catch (TooFrequentRequestException e) {
+                } catch (TooFrequentRequestException | HttpRequestTimeoutException e) {
+                    // When exceptions are caught, 3 re-attempts are allowed.
                     retries++;
                     if (retries >= MAX_RETRIES) {
                         throw e;
                     }
-                    LogWriter.Companion.getInstance().tryLog(new LogBody(Severity.WARN, "Too frequent retry!", null, LocalDateTime.now()));
-                    Thread.sleep((long) TOO_FREQUENT_DELAY_MS * retries);
+                    LogWriter.Companion.getInstance().tryLog(new LogBody(Severity.WARN,
+                            e instanceof TooFrequentRequestException ? "Rate limited; retrying" : "Request timed out; retrying",
+                            null, LocalDateTime.now()));
+                    // Delay for HTTP request timeout is unnecessary.
+                    if (e instanceof TooFrequentRequestException) {
+                        Thread.sleep((long) TOO_FREQUENT_DELAY_MS * retries);
+                    }
                 }
             }
 
             JsonNode dataNode = jsonNode.get("data");
             JsonNode data = (dataNode != null) ? dataNode.get("list") : null;
-            List<GachaRecord> pageRecords = new ArrayList<>();
+            List<GachaRecord> pageRecords = new ArrayList<>(20);
 
             if (data != null && data.isArray()) {
                 for (JsonNode item : data) {
@@ -216,15 +233,28 @@ public class Fetcher implements AutoCloseable {
 
             if (pageRecords.isEmpty()) break;
 
+            // Keep the new prefix and stop this banner at the first repeated record.
+            // This ensures no duplicate endID occurs.
+            int trimIndex = pageRecords.size();
+            for (int i = 0; i < pageRecords.size(); i++) {
+                String id = pageRecords.get(i).getRecordID();
+                if (id.equals(endID) || !seenIds.add(id)) {
+                    trimIndex = i;
+                    break;
+                }
+            }
+            if (trimIndex < pageRecords.size()) {
+                currentBannerRecords.addAll(pageRecords.subList(0, trimIndex));
+                break;
+            }
+
             currentBannerRecords.addAll(pageRecords);
             endID = pageRecords.getLast().getRecordID();
-            Thread.sleep(Base_Delay + rand.nextInt(500, 1500));
+            Thread.sleep(BASE_DELAY + rand.nextInt(500, 1500));
         }
         LogWriter.Companion.getInstance().tryLog(new LogBody(Severity.INFO, "Numbers of record fetched: " + currentBannerRecords.size(), null, LocalDateTime.now()));
         return currentBannerRecords;
     }
-
-
 
     private void setUid(JsonNode item) {
         uid = item.get("uid").asText();

@@ -6,6 +6,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withTimeout
 import logger.LogBody
 import model.Severity
 import logger.LogWriter
@@ -18,6 +22,7 @@ import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import java.util.UUID
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val PROXY_EXIT_TIMEOUT = 2
 private const val PROXY_EXIT_DELIVERY_FAILED = 3
@@ -65,7 +70,8 @@ class ProxyService {
                 // As soon as the raw URL is caught, the server returns it via ProxyRecevier and validate.
                 // If timeout, cleanup everything and return the message
                 proxyProcess = try {
-                    lifecycle.start(ProcessBuilder(nodeExe, proxyScript.absolutePath, "8080")
+                    lifecycle.start(
+                        ProcessBuilder(nodeExe, proxyScript.absolutePath, "8080")
                         .directory(File(System.getProperty("user.dir")))
                         .apply {
                             environment()["GENSHIN_PROXY_SESSION"] = sessionId
@@ -104,23 +110,24 @@ class ProxyService {
                 val authKeyURL = proxyReceiver.getCapturedAuthKeyUrl()
                     ?: return@withContext Result.failure(ProxyException(ProxyExceptionType.NO_AUTHKEY))
 
-                // As soon as the URL is caught, we pass it to Java.
-                // URL will be processed to clean query, and used for requesting.
+                // As soon as the URL is caught, we pass it to the fetcher and convert it to clean query for fetching.
                 onPhase(CapturePhase.FETCHING)
                 fetcher = Fetcher(authKeyURL)
                 debug("ProxyService: Fetcher initialized; query preparation completed")
 
                 val javaRecords = try {
-                    runInterruptible { fetcher.getAllRecords() }
+                    fetchRecordsWithDeadline {
+                        fetcher.getAllRecords()
+                    }.getOrThrow()
                 } catch (e: IOException) {
                     return@withContext Result.failure(ProxyException(ProxyExceptionType.SERVER_CONNECTION, cause = e))
                 }
 
+                /**
+                 * Since Mihoyo doesn't send back the item ID, we need to create the Name -> ID map [ItemTranslator.buildNameToIdMap].
+                 * Now, each item has its corresponding ID.
+                 */
                 val records = javaRecords.map { record ->
-                    /**
-                     * Since Mihoyo doesn't send back the item ID, we need to create the Name -> ID map [ItemTranslator.buildNameToIdMap].
-                     * Now, each item has its corresponding ID.
-                     * */
                     val itemId = ItemTranslator.getIdByName(record.name).ifBlank { record.itemID }
                     record.copy(
                         itemID = itemId,
@@ -128,12 +135,16 @@ class ProxyService {
                     )
                 }
 
-                debug("ProxyService: fetch completed; records=${records.size}, UID present=${fetcher.uid.isNotBlank()}")
+                //debug("ProxyService: fetch completed; records=${records.size}, UID present=${fetcher.uid.isNotBlank()}")
                 Result.success(fetcher.getUid() to records)
             } catch (e: CancellationException) {
                 throw e
+            } catch (e: ProxyException) {
+                Result.failure(e)
             } catch (e: AuthkeyExpiredException) {
                 Result.failure(ProxyException(ProxyExceptionType.AUTHKEY_EXPIRED, cause = e))
+            } catch (e: HttpRequestTimeoutException) {
+                Result.failure(ProxyException(ProxyExceptionType.TIMEOUT, cause = e))
             } catch (e: GachaServerConnectionException) {
                 Result.failure(ProxyException(ProxyExceptionType.SERVER_CONNECTION, cause = e))
             } catch (e: InvalidAuthkeyUrlException) {
@@ -145,9 +156,9 @@ class ProxyService {
                 runCatching { lifecycle.close() }
                     .onFailure { LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Proxy lifecycle cleanup failed; session snapshot retained", it)) }
                 runCatching { proxyReceiver.stopServer() }
-                    .onFailure { LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Receiver stop failed", it)) }
+                    .onFailure { LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to stop receiver!", it)) }
                 runCatching { fetcher?.close() }
-                    .onFailure { LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Fetcher close failed", it)) }
+                    .onFailure { LogWriter.instance.tryLog(LogBody(Severity.ERROR, "Failed to close fetcher!", it)) }
             }
         }
     }
@@ -174,7 +185,6 @@ class ProxyService {
         }
     }
 
-
     private fun streamProxyDebugOutput(process: Process) {
         Thread {
             try {
@@ -195,6 +205,33 @@ class ProxyService {
         }
     }
 
-
+    /**
+     * Set deadline to cover all banners, pages, retries, sleeps, and response-body reads.
+     * It does not occur often, as the response body from Mihoyo server is concise.
+     *
+     * The current maximum time is 5 minutes. Under normal circumstances, a single fetch
+     * takes approximately 1 minute 30 seconds to 2 minutes (incremental fetching).
+     */
+    private suspend fun fetchRecordsWithDeadline(
+        timeoutMillis: Long = 5 * 60 * 1_000L, fetch: () -> List<GachaRecord>
+    ): Result<List<GachaRecord>> =
+        try {
+            Result.success(withTimeout(timeoutMillis.milliseconds) {
+                runInterruptible(Dispatchers.IO) {
+                    fetch()
+                }
+            })
+        } catch (e: TimeoutCancellationException) {
+            currentCoroutineContext().ensureActive()
+            Result.failure(ProxyException(ProxyExceptionType.TIMEOUT, cause = e))
+        } catch (e: HttpRequestTimeoutException) {
+            currentCoroutineContext().ensureActive()
+            Result.failure(ProxyException(ProxyExceptionType.TIMEOUT, cause = e))
+        } catch (e: GachaServerConnectionException) {
+            currentCoroutineContext().ensureActive()
+            Result.failure(ProxyException(ProxyExceptionType.SERVER_CONNECTION, cause = e))
+        }
 
 }
+
+

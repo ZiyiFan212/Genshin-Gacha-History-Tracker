@@ -108,10 +108,14 @@ class AppViewModel internal constructor(
     private val searchAccount: suspend (String) -> Result<Pair<List<GachaRecord>, UserStatistics>?> = Database::search,
     private val today: () -> LocalDate = { LocalDate.now(utilities.SERVER_TIME_OFFSET) },
     private val closeDatabase: () -> Unit = Database::dbClose,
+    private val prepareCapture: suspend () -> storage.ImportTicket = {
+        Database.beginImport().getOrThrow().also { BackupManager.backupBeforeImport().getOrThrow() }
+    },
+    private val captureRecords: suspend ((CapturePhase) -> Unit) -> Result<Pair<String, List<GachaRecord>>> =
+        ProxyService()::captureGachaRecords,
 ) {
     private val uiState = MutableStateFlow(AppUiState())
     val state: StateFlow<AppUiState> = uiState.asStateFlow()
-    private val proxyService = ProxyService()
     private val preferencesMutex = Mutex()
     private val shutdownLock = Any()
     private var shutdownJob: Job? = null
@@ -348,12 +352,11 @@ class AppViewModel internal constructor(
             try {
                 withContext(Dispatchers.IO) {
                     runCatching {
-                        val importTicket = Database.beginImport().getOrThrow()
-                        BackupManager.backupBeforeImport().getOrThrow()
+                        val importTicket = prepareCapture()
 
-                        val (uid, imported) = proxyService.captureGachaRecords(
-                            onPhase = { phase -> uiState.update { it.copy(capturePhase = phase) } },
-                        ).getOrThrow()
+                        val (uid, imported) = captureRecords { phase ->
+                            uiState.update { it.copy(capturePhase = phase) }
+                        }.getOrThrow()
                         val validation = DataValidator.validate(imported, uid, ItemTranslator::containsId)
                         if (validation.hasErrors) {
                             throw IllegalStateException(

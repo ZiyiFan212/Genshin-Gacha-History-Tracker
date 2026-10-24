@@ -47,7 +47,7 @@ class ProxyService {
             val sessionId = UUID.randomUUID().toString()
             var proxyProcess: Process? = null
             var fetcher: Fetcher? = null
-            val lifecycle = ProxyLifecycle({ recoverProxySession(sessionId) })
+            val lifecycle = ProxyLifecycle({ restoreNormalProxySetting(sessionId) })
 
             try {
                 onPhase(CapturePhase.STARTING)
@@ -78,8 +78,8 @@ class ProxyService {
                             environment()["GENSHIN_CAPTURE_TOKEN"] = proxyReceiver.getAuthToken()
                             environment()["GENSHIN_PROXY_PARENT_PIPE"] = "1"
                         }
-                        .redirectErrorStream(true)
-                        .redirectOutput(ProcessBuilder.Redirect.DISCARD))
+                        .redirectErrorStream(true))
+                        //.redirectOutput(ProcessBuilder.Redirect.DISCARD)) debug need
                 } catch (e: IOException) {
                     return@withContext Result.failure(ProxyException(ProxyExceptionType.PROXY_START_FAILED, cause = e))
                 }
@@ -163,14 +163,14 @@ class ProxyService {
         }
     }
 
-    private fun recoverProxySession(sessionId: String) {
+    private fun restoreNormalProxySetting(sessionId: String) {
         val sessionScript = File(System.getProperty("user.dir"), "proxy/windowsProxySession.js")
         try {
             val process = ProcessBuilder(nodeExe, sessionScript.absolutePath)
                 .directory(File(System.getProperty("user.dir")))
                 .apply { environment()["GENSHIN_PROXY_SESSION"] = sessionId }
                 .redirectErrorStream(true)
-                .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                //.redirectOutput(ProcessBuilder.Redirect.DISCARD) debug
                 .start()
             streamProxyDebugOutput(process)
             if (!process.waitFor(30, TimeUnit.SECONDS)) {

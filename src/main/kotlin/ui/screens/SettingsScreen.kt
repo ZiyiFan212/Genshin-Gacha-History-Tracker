@@ -9,11 +9,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ui.components.SectionTitle
@@ -34,9 +40,35 @@ fun SettingsScreen(
     onUpdateRecords: () -> Unit,
     onDeleteUid: () -> Unit,
     onExit: () -> Unit,
-    hasUid: Boolean,
+    selectedUid: String?,
     modifier: Modifier = Modifier,
 ) {
+    var showDeleteConfirmation by remember(selectedUid) { mutableStateOf(false) }
+
+    if (showDeleteConfirmation && selectedUid != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text(I18nManager["settings.delete_uid"]) },
+            text = { Text(I18nManager["settings.delete_uid_warning"]) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmation = false
+                        onDeleteUid()
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) {
+                    Text(I18nManager["settings.confirm_delete"])
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmation = false }) {
+                    Text(I18nManager["settings.cancel"])
+                }
+            },
+        )
+    }
+
     Column(
         modifier = modifier.fillMaxSize().padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -120,7 +152,7 @@ fun SettingsScreen(
             )
         }
 
-        if (hasUid) {
+        if (selectedUid != null) {
             Button(
                 onClick = onUpdateStats,
                 modifier = Modifier.fillMaxWidth(),
@@ -136,7 +168,7 @@ fun SettingsScreen(
             }
 
             Button(
-                onClick = onDeleteUid,
+                onClick = { showDeleteConfirmation = true },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
             ) {

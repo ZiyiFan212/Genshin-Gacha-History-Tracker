@@ -193,7 +193,7 @@ fun FrameWindowScope.App(viewModel: AppViewModel,
                                 onUpdateRecords = viewModel::updateRecords,
                                 onDeleteUid = viewModel::deleteCurrentUid,
                                 onExit = onExit,
-                                hasUid = state.selectedUid != null,
+                                selectedUid = state.selectedUid,
                                 modifier = Modifier.weight(1f),
                             )
                         }

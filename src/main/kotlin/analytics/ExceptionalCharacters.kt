@@ -5,13 +5,13 @@ import utilities.AppConstants
 import model.GuaranteeType
 
 object ExceptionalCharacters {
-    // 特殊角色id
+    // Special Character IDs
     private const val KEQING_ID = "10000042"
     private const val TIGHNARI_ID = "10000069"
     private const val DEHYA_ID = "10000079"
     private const val YUMEMIZUKI_ID = "10000109"
 
-    // 曾经up的时间段
+    // UP time interval
     private const val KEQING_START = "2021-02-17 18:00:00"
     private const val KEQING_END = "2021-03-02 15:59:59"
 
@@ -40,6 +40,11 @@ object ExceptionalCharacters {
     fun getSetOfExceptionalCharacterID(): Set<String> {
         return setOf(KEQING_ID, TIGHNARI_ID, DEHYA_ID, YUMEMIZUKI_ID)
     }
+
+    fun getYumemizukiID(): String = YUMEMIZUKI_ID
+    fun getKeqingID(): String = KEQING_ID
+    fun getDehyaID(): String = DEHYA_ID
+    fun getTighnariID(): String = TIGHNARI_ID
 }
 
 
@@ -50,17 +55,28 @@ fun losingStreakCounter(lastFiveWasLimited: Boolean, currentLosingStreak: Int): 
     }
 }
 
-// Handling the case in which parts of standard character were limited before
-fun checkIfExceptionalCharacterWasLimited (record: GachaRecord, lastFiveWasLimited: Boolean): GuaranteeType {
+/** Handling the case in which parts of standard character were limited before
+ *  Only Yumemizuki, Dehya, Keqing, and Tighnari was limited before.
+ */
+fun checkIfExceptionalCharacterWasLimited (
+    record: GachaRecord, lastFiveWasLimited: Boolean, currentLosingStreak: Int,
+    hadFiveOnBanner: Boolean = false
+): GuaranteeType {
     val time = record.time
     val itemId = record.itemID
     val pool = record.gachaType
 
-    if ((pool == AppConstants.CHARACTER_EVENT_BANNER || pool == AppConstants.CHARACTER_EVENT_BANNER2)
-        && ExceptionalCharacters.isCharacterWithinUpBannerPeriod(itemId, time)) {
-        return if (lastFiveWasLimited) GuaranteeType.WON_FIFTY_FIFTY
-        else GuaranteeType.GUARANTEED
+    if (AppConstants.CharacterEventBannerSet.contains(pool) &&
+        ExceptionalCharacters.isCharacterWithinUpBannerPeriod(itemId, time)) {
+        return if (!hadFiveOnBanner) {
+            GuaranteeType.WON_FIFTY_FIFTY
+        } else if (!lastFiveWasLimited) {
+            GuaranteeType.GUARANTEED
+        } else if (currentLosingStreak == 3 && itemId == ExceptionalCharacters.getYumemizukiID()) {
+            GuaranteeType.CAPTURE_RADIANCE
+        } else {
+            GuaranteeType.WON_FIFTY_FIFTY
+        }
     }
-
     return GuaranteeType.LOST_FIFTY_FIFTY
 }

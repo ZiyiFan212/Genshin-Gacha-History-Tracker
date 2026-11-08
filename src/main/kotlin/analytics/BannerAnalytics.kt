@@ -136,9 +136,7 @@ fun List<GachaRecord>.buildTimeline(bannerFilter: Set<String> = limitedBanners):
 
     for ((banner, copyRecords) in grouped) {
         var pity = 0
-        var lastFiveWasLimited = false
-        var hadFiveOnBanner = false
-        var losingStreak = 0
+        val guaranteeState = CharacterGuaranteeState()
 
         for (record in copyRecords.sortedChronologically()) {
             pity++
@@ -150,13 +148,12 @@ fun List<GachaRecord>.buildTimeline(bannerFilter: Set<String> = limitedBanners):
                 guarantee = if (bannerType == AppConstants.WEAPON_EVENT_BANNER || bannerType == AppConstants.CHRONICLE_EVENT_BANNER) {// Double guarded
                     GuaranteeType.NONE
                 } else {
-                    getFiveStarState(banner, record, hadFiveOnBanner, lastFiveWasLimited, losingStreak)
+                    getFiveStarState(banner, record, guaranteeState.hadFiveOnBanner,
+                        guaranteeState.lastFiveWasLimited, guaranteeState.losingStreak)
                 }
 
                 if (bannerType == AppConstants.CHARACTER_EVENT_BANNER || bannerType == AppConstants.CHARACTER_EVENT_BANNER2) {
-                    hadFiveOnBanner = true
-                    lastFiveWasLimited = !StandardItemUID.contains(record.itemID)
-                    losingStreak = losingStreakCounter(lastFiveWasLimited, losingStreak)
+                    guaranteeState.update(guarantee, record.time)
                 }
             }
 

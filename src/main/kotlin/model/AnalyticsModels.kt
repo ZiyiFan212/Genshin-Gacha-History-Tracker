@@ -10,7 +10,7 @@ import utilities.AppConstants
  * - [CAPTURE_RADIANCE]: Guaranteed pity after losing 50/50 three times.
  * - [GUARANTEED]: Guaranteed pity after losing a 50/50.
  * - [STANDARD]: Non-character event banner five-star items are marked as this.
- * - [NONE]: Four-star items.
+ * - [NONE]: Four-star, weapon, and chronicle wish items.
  */
 enum class GuaranteeType {
     WON_FIFTY_FIFTY,

@@ -21,17 +21,59 @@ import model.PullOutcome
  * @param lastFiveWasLimited 上次五星是否为 UP（非常驻物品）
  * @return 对应的 [GuaranteeType]；非五星调用方应在外层过滤
  */
-internal fun getFiveStarState ( banner: String,record: GachaRecord,
+internal fun getFiveStarState (banner: String,record: GachaRecord,
     hadFiveOnBanner: Boolean, lastFiveWasLimited: Boolean, currentLostStreak: Int = 0
 ): GuaranteeType {
+    // Non-five start items, weapon, chronicle-wish item does not count.
+    if (record.rankType != 5 || banner == AppConstants.WEAPON_EVENT_BANNER ||
+        banner == AppConstants.CHRONICLE_EVENT_BANNER) {
+        return GuaranteeType.NONE
+    }
 
-    if (record.rankType != 5) return GuaranteeType.NONE
-    if (banner == AppConstants.WEAPON_EVENT_BANNER || banner == AppConstants.CHRONICLE_EVENT_BANNER) return GuaranteeType.NONE
+    if (banner == AppConstants.STANDARD_EVENT_BANNER) {
+        return GuaranteeType.STANDARD
+    }
 
+    // Special case of 4 standard character.
+    val isExceptionCharacter: Boolean = (AppConstants.CharacterEventBannerSet.contains(banner) &&
+                ExceptionalCharacters.getSetOfExceptionalCharacterID().contains(record.itemID))
+    if (isExceptionCharacter) {
+        return checkIfExceptionalCharacterWasLimited(
+            record,
+            lastFiveWasLimited,
+            currentLostStreak,
+            hadFiveOnBanner,
+        )
+    }
+
+    /** Only character banners left */
+    val isStandardCharacter: Boolean = AppConstants.StandardCharacterID.contains(record.itemID)
+    val isAfterVersion5: Boolean = TimeCheckForCR.afterVer5(record.time)
+    // If there's no existing banner history, we consider if it's standard or limit item.
+    if (!hadFiveOnBanner && isStandardCharacter) {
+        return GuaranteeType.LOST_FIFTY_FIFTY
+    } else if (!hadFiveOnBanner){
+        return GuaranteeType.WON_FIFTY_FIFTY
+    }
+
+    if (!isStandardCharacter && !lastFiveWasLimited) {
+        return GuaranteeType.GUARANTEED
+    }
+
+    if (!isStandardCharacter && isAfterVersion5 && currentLostStreak == 3) {
+        return GuaranteeType.CAPTURE_RADIANCE
+    }
+
+    if (!isStandardCharacter) {
+        return GuaranteeType.WON_FIFTY_FIFTY
+    }
+
+    return GuaranteeType.LOST_FIFTY_FIFTY
+    /*
     return when {
         banner == AppConstants.STANDARD_EVENT_BANNER -> GuaranteeType.STANDARD
         (AppConstants.CharacterEventBannerSet.contains(banner)) && ExceptionalCharacters.getSetOfExceptionalCharacterID().contains(record.itemID) -> {
-            checkIfExceptionalCharacterWasLimited(record, lastFiveWasLimited)
+            checkIfExceptionalCharacterWasLimited(record, lastFiveWasLimited, currentLostStreak)
         }
         !AppConstants.StandardItemUID.contains(record.itemID) -> {
             if (hadFiveOnBanner && !lastFiveWasLimited) GuaranteeType.GUARANTEED
@@ -44,10 +86,11 @@ internal fun getFiveStarState ( banner: String,record: GachaRecord,
         AppConstants.StandardItemUID.contains(record.itemID) -> GuaranteeType.LOST_FIFTY_FIFTY
         else -> GuaranteeType.STANDARD
     }
+     */
 }
 
 // Singleton object for checking the time of capture radiance
-object TimeCheckForCR {
+internal object TimeCheckForCR {
     const val CAPTURE_RADIANCE_START_TIME = "2024-08-28 06:00:00"
     fun afterVer5(recordTime: String): Boolean {
         return recordTime >= CAPTURE_RADIANCE_START_TIME
@@ -166,9 +209,7 @@ private fun List<GachaRecord>.buildGoldHistoryForBannerPool(gachaTypes: Set<Stri
 ): List<GoldPullSegment> {
     val segments = mutableListOf<GoldPullSegment>()
     var pity = 0
-    var lastFiveWasLimited = false
-    var hadFiveOnBanner = false
-    var losingStreak = 0
+    val guaranteeState = CharacterGuaranteeState()
 
     for (record in filter { it.gachaType in gachaTypes }.sortedChronologically()) {
         pity++
@@ -177,7 +218,8 @@ private fun List<GachaRecord>.buildGoldHistoryForBannerPool(gachaTypes: Set<Stri
             val guarantee = if (record.gachaType == AppConstants.WEAPON_EVENT_BANNER) {
                 GuaranteeType.NONE
             } else {
-                getFiveStarState(record.gachaType, record, hadFiveOnBanner, lastFiveWasLimited, losingStreak)
+                getFiveStarState(record.gachaType, record, guaranteeState.hadFiveOnBanner,
+                    guaranteeState.lastFiveWasLimited, guaranteeState.losingStreak)
             }
 
             segments.add(GoldPullSegment(
@@ -190,9 +232,7 @@ private fun List<GachaRecord>.buildGoldHistoryForBannerPool(gachaTypes: Set<Stri
                 ))
 
             if (record.gachaType == AppConstants.CHARACTER_EVENT_BANNER || record.gachaType == AppConstants.CHARACTER_EVENT_BANNER2) {
-                hadFiveOnBanner = true
-                lastFiveWasLimited = !AppConstants.StandardItemUID.contains(record.itemID)
-                losingStreak = losingStreakCounter(lastFiveWasLimited, losingStreak)
+                guaranteeState.update(guarantee, record.time)
             }
             pity = 0
         }

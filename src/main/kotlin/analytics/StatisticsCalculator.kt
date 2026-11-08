@@ -39,7 +39,7 @@ fun List<GachaRecord>.calculateStat(): UserStatistics {
     val totalFiveStarCharacter: Int = first.size
     val totalFiveStarWeapon: Int = first2.size
 
-    val totalFiveStarCharacterLim: Int = first.count { !StandardItemUID.contains(it.itemID) }
+    val totalFiveStarCharacterLim: Int = first.count { it.isUpAtPullTime() }
     val totalFiveStarWeaponLim: Int = first2.count { !StandardItemUID.contains(it.itemID) }
 
     // 胜率
@@ -75,7 +75,7 @@ fun List<GachaRecord>.calculateWinRate(bannerPool: Set<String>): Double {
     for (record in filter { it.gachaType in bannerPool }.sortedChronologically()) {
         if (record.rankType != 5) continue
 
-        val isUp = !StandardItemUID.contains(record.itemID)
+        val isUp = record.isUpAtPullTime()
         val state = when {
             (isUp && prevState == PullOutcome.LOSS) -> PullOutcome.GUARANTEED_UP// 前一个歪了，本次就是guarantee
             isUp -> PullOutcome.UP
@@ -137,6 +137,9 @@ private fun convertToEpochMillis(dateTimeStr: String): Long {
     return try {
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
         val localDateTime = LocalDateTime.parse(dateTimeStr, formatter)
+        // 国服限定：抽卡记录是 UTC+8 本地时间。Asia/Shanghai 在游戏运营期间为 UTC+8，
+        // 转换后的 epoch 毫秒与 upTime.json 比较，不依赖运行电脑时区。
+        // 接入其他服务器时必须改为账号服务器时区；当前不自动识别。
         localDateTime.atZone(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli()
     } catch (e: Exception) {
         0L
@@ -188,7 +191,9 @@ fun averagePityCounter(
     for (record in poolRecords) {
         counter++
         if (record.rankType == 5) {
-            if (standardItemSet == null || !standardItemSet.contains(record.itemID)) {
+            if (standardItemSet == null || !standardItemSet.contains(record.itemID) ||
+                (record.itemID in AppConstants.StandardCharacterID &&
+                    record.gachaType in AppConstants.CharacterEventBannerSet && record.isUpAtPullTime())) {
                 list.add(counter)
                 counter = 0
             }

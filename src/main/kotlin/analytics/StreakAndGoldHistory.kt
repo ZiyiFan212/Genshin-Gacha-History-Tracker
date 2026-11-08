@@ -128,7 +128,7 @@ fun List<GachaRecord>.analyzeStreaks(
             val state = if (shouldIgnore(banner)) {
                 PullOutcome.IGNORE
             } else {
-                val isUp = !AppConstants.StandardItemUID.contains(record.itemID)
+                val isUp = record.isUpAtPullTime()
                 if (isUp && prevState == PullOutcome.LOSS) {
                     PullOutcome.GUARANTEED_UP// 大保底的金
                 } else if (isUp) {

@@ -47,6 +47,12 @@ object ExceptionalCharacters {
     fun getTighnariID(): String = TIGHNARI_ID
 }
 
+/** Historical character UP periods override today's standard-item membership only in 301/400. */
+internal fun GachaRecord.isUpAtPullTime(): Boolean =
+    !AppConstants.StandardItemUID.contains(itemID) ||
+        (gachaType in AppConstants.CharacterEventBannerSet &&
+            ExceptionalCharacters.isCharacterWithinUpBannerPeriod(itemID, time))
+
 
 fun losingStreakCounter(lastFiveWasLimited: Boolean, currentLosingStreak: Int): Int {
     return when (lastFiveWasLimited) {

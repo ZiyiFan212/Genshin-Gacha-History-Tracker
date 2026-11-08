@@ -1,7 +1,25 @@
-import analytics.*
+package DBsaving
+
+import analytics.buildGoldHistory
+import analytics.buildTimeline
+import analytics.calculateStat
+import analytics.calendarDays
+import analytics.limitedBannerStats
+import analytics.limitedWeaponAvgPity
+import analytics.longestNoPullIntervalDays
+import analytics.upRatioCalculator
 import assets.UpTimeLoader
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
 import model.GachaRecord
 import ui.AppScreen
 import ui.AppUiState
@@ -10,7 +28,13 @@ import java.time.LocalDate
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.test.*
+import javax.swing.SwingUtilities
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotSame
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 class CachedAnalyticsTest {
     private fun records(count: Int) = List(count) { index ->
@@ -29,7 +53,7 @@ class CachedAnalyticsTest {
         val searchStarted = CompletableDeferred<Unit>()
         val releaseSearch = CompletableDeferred<Unit>()
         val viewModel = AppViewModel(scope, {
-            assertFalse(javax.swing.SwingUtilities.isEventDispatchThread())
+            assertFalse(SwingUtilities.isEventDispatchThread())
             searchStarted.complete(Unit)
             releaseSearch.await()
             Result.success(source to source.calculateStat())

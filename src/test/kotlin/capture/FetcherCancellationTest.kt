@@ -1,6 +1,15 @@
-import kotlinx.coroutines.*
-import core.*
+package capture
+
+import core.HttpRequestTimeoutException
+import core.ProxyException
 import fetcher.Fetcher
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.withTimeout
 import model.ProxyExceptionType
 import java.net.Authenticator
 import java.net.CookieHandler
@@ -17,12 +26,16 @@ import java.util.concurrent.Executor
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLParameters
 import javax.net.ssl.SSLSession
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 class FetcherCancellationTest {
     // we define a customized http client for offline testing.
-    private class Client( private val interruptImmediately: Boolean = false,
-                          private val respond: ((HttpRequest) -> String)? = null,
+    private class Client(private val interruptImmediately: Boolean = false,
+                         private val respond: ((HttpRequest) -> String)? = null,
         ) : HttpClient() {
         val sending = CompletableDeferred<Unit>()
         var forced = false
@@ -127,11 +140,13 @@ class FetcherCancellationTest {
     @Test
     fun `testing trimming records after the duplicated endID, return all pages`() = runBlocking {
         var calls = 0
-        val client = Client(respond = { when (++calls) {
-            1 -> fake_page("30", "20")
-            2 -> fake_page("10", "20", "5")
-            else -> fake_page()
-        } })
+        val client = Client(respond = {
+            when (++calls) {
+                1 -> fake_page("30", "20")
+                2 -> fake_page("10", "20", "5")
+                else -> fake_page()
+            }
+        })
 
         // The algorithm simply cutoff the records!
         // Having same endID from the official server is extremely rare, but never zero.

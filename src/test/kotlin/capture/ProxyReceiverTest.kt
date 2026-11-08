@@ -1,3 +1,5 @@
+package capture
+
 import core.ProxyReceiver
 import java.net.Socket
 import java.nio.charset.StandardCharsets
@@ -97,7 +99,9 @@ class ProxyReceiverTest {
                         }
                     } catch (_: Exception) { }
                 }.apply { isDaemon = true; start() }
-                try { assertEquals(-1, socket.getInputStream().read()) }
+                try {
+                    assertEquals(-1, socket.getInputStream().read())
+                }
                 finally { writer.interrupt(); writer.join(1_000) }
             }
             assertNull(receiver.getCapturedAuthKeyUrl())
@@ -115,7 +119,9 @@ class ProxyReceiverTest {
             assertTrue(Thread.currentThread().isInterrupted)
         } finally { Thread.interrupted() }
         receiver.startServer()
-        try { assertEquals(200, request(receiver)) }
+        try {
+            assertEquals(200, request(receiver))
+        }
         finally { receiver.stopServer() }
     }
 }

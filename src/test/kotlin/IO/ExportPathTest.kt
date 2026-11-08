@@ -1,3 +1,6 @@
+package IO
+
+import assets.ItemTranslator
 import model.GachaRecord
 import storage.CsvExporter
 import storage.HtmlExporter
@@ -48,7 +51,7 @@ class ExportPathTest {
 
     @Test
     fun `valid UIDs preserve generated names and explicit output paths`() {
-        assets.ItemTranslator.load().getOrThrow()
+        ItemTranslator.load().getOrThrow()
         val root = createTempDirectory("export-valid-")
         try {
             for (uid in listOf("123456789", "1234567890")) {

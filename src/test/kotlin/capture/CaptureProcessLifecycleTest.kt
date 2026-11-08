@@ -1,5 +1,7 @@
-import core.ProxyLifecycle
+package capture
+
 import core.NodeLocator
+import core.ProxyLifecycle
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,7 +13,8 @@ class CaptureProcessLifecycleTest {
         var recovered = 0
         val lifecycle = ProxyLifecycle({ recovered++ }, graceMillis = 2_000)
         try {
-            val process = lifecycle.start(ProcessBuilder(NodeLocator.resolveNodejsEnvironment(), "-e",
+            val process = lifecycle.start(ProcessBuilder(
+                NodeLocator.resolveNodejsEnvironment(), "-e",
                 "process.stdin.on('end', () => process.exit(0)); process.stdin.resume(); console.log('ready')"))
             assertEquals("ready", process.inputStream.bufferedReader().readLine())
             lifecycle.close()
@@ -33,7 +36,8 @@ class CaptureProcessLifecycleTest {
     fun `unresponsive owned child is stopped before recovery`() {
         var recovered = 0
         val lifecycle = ProxyLifecycle({ recovered++ }, graceMillis = 100)
-        val process = lifecycle.start(ProcessBuilder(NodeLocator.resolveNodejsEnvironment(), "-e",
+        val process = lifecycle.start(ProcessBuilder(
+            NodeLocator.resolveNodejsEnvironment(), "-e",
             "setInterval(() => {}, 1000); console.log('ready')"))
         try {
             assertEquals("ready", process.inputStream.bufferedReader().readLine())

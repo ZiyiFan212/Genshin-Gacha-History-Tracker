@@ -151,7 +151,8 @@ public class Fetcher implements AutoCloseable {
                     } else {
                         urlBuilder.append("&end_id=0");
                     }
-                    LogWriter.Companion.getInstance().tryLog(new LogBody(Severity.INFO, urlBuilder.substring(0, 20), null, LocalDateTime.now()));
+                    LogWriter.Companion.getInstance().tryLog(new LogBody(Severity.INFO,
+                            "Fetching with: " + urlBuilder.substring(0, 20), null, LocalDateTime.now()));
 
                     // Build HTTP request. Note that headers are essential to not be treated as script by Mihoyo server.
                     HttpRequest request = HttpRequest.newBuilder()

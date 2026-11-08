@@ -77,15 +77,14 @@ class ProxyService {
                             environment()["GENSHIN_PROXY_SESSION"] = sessionId
                             environment()["GENSHIN_CAPTURE_TOKEN"] = proxyReceiver.getAuthToken()
                             environment()["GENSHIN_PROXY_PARENT_PIPE"] = "1"
-                        }
-                        .redirectErrorStream(true))
+                        }.redirectErrorStream(true))
                         //.redirectOutput(ProcessBuilder.Redirect.DISCARD)) debug need
                 } catch (e: IOException) {
                     return@withContext Result.failure(ProxyException(ProxyExceptionType.PROXY_START_FAILED, cause = e))
                 }
 
                 onPhase(CapturePhase.WAITING_FOR_GAME)
-                streamProxyDebugOutput(proxyProcess)
+                outputConsumer(proxyProcess)
                 debug("ProxyService: waiting for Node exit (120s); proxy=8080, receiver=3000")
 
                 val finished = runInterruptible { proxyProcess.waitFor(120, TimeUnit.SECONDS) }
@@ -126,6 +125,7 @@ class ProxyService {
                 /**
                  * Since Mihoyo doesn't send back the item ID, we need to create the Name -> ID map [ItemTranslator.buildNameToIdMap].
                  * Now, each item has its corresponding ID.
+                 * If the record name is unknown, keep the original ID.
                  */
                 val records = javaRecords.map { record ->
                     val itemId = ItemTranslator.getIdByName(record.name).ifBlank { record.itemID }
@@ -172,7 +172,7 @@ class ProxyService {
                 .redirectErrorStream(true)
                 //.redirectOutput(ProcessBuilder.Redirect.DISCARD) debug
                 .start()
-            streamProxyDebugOutput(process)
+            outputConsumer(process)
             if (!process.waitFor(30, TimeUnit.SECONDS)) {
                 process.destroyForcibly()
                 process.waitFor(5, TimeUnit.SECONDS)
@@ -185,7 +185,7 @@ class ProxyService {
         }
     }
 
-    private fun streamProxyDebugOutput(process: Process) {
+    private fun outputConsumer(process: Process) {
         Thread {
             try {
                 process.inputStream.bufferedReader(Charsets.UTF_8).use { reader ->

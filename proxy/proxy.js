@@ -8,7 +8,10 @@ const { setSystemProxy } = require('./systemProxy')
 
 const KOTLIN_PORT = 3000
 const PROXY_PORT = process.argv[2] || 8080
-const CAPTURE_TIMEOUT_MS = 120000
+
+// Proxy service time: 120 seconds. The capture time is 100 seconds long, excluding
+// setup time.
+const CAPTURE_TIMEOUT_MS = 100000
 const userPath = os.homedir()
 
 const EXIT = {

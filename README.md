@@ -4,19 +4,19 @@
 
 ## 中文介绍
 
-作者是 ECE (Uwaterloo 31') 学生，也是一个原神玩家。最初是为了整理自己的抽卡记录并且不再依赖于微信服务/其他平台，实现一个本地的 Desktop App。
-程序将记录采集、导入、存储、统计与导出整合在一起，方便回顾抽卡历史、查看当前抽数，以及每隔卡池的抽卡结果。
+一个本地的 Desktop App。
+采集、导入、存储、统计与导出整合在一起，方便回顾抽卡历史、查看当前抽数，以及每隔卡池的抽卡结果。
 
 界面使用 Kotlin 和 Compose Desktop 构建，结合 Java、SQLite 与 Node.js 代理服务。本文档仅说明 Windows 环境下的构建和启动方式。本应用也仅限于
-windows 10+的环境。
+windows 10+的环境。考虑过适配 MacOS,以及 Linux 系统，但由于游戏绝大部分运行在 Windows 环境便暂缓了实施。
 
 ### 主要功能
 
 - **记录采集与导入**：通过本地代理获取游戏内抽卡历史；也可导入 JSON 文件，并进行校验、去重和合并（需要遵守 UIGF 格式）。
-- **多账号管理**：按 UID 存储记录，并在界面中切换账号。
+- **多账号管理**：按 UID 存储记录，并在界面中切换不同账号。
 - **抽卡统计**：查看总抽数、五星与四星数量、平均出金抽数、当前垫抽数等。
 - **可视化**：通过时间线、日历、出金历史图表和月度原石消耗统计回顾记录。
-- **数据导出**：提供 JSON（UIGF v3.0/v4.1）、Excel、CSV 和 HTML 导出选项。尚未验证与其他社区工具的互操作性；版本说明见文末。
+- **数据导出**：提供 JSON（UIGF v3.0/v4.1）、Excel、CSV 和 HTML 导出选项。
 - **本地存储与备份**：使用 SQLite 保存数据；导入或采集前备份已有数据库。
 
 ### Windows 环境准备
@@ -94,9 +94,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build\libs\shortcut.ps
 
 ## English 
 
-Genshin-Analyzer-NEXT is a personal desktop project designed and developed by the author (A student in UWaterloo ECE 31', also a gacha gamer). It began as a way to organize personal wish records and brings collection, importing, storage, analytics, and exporting into one app. It helps users revisit their wish history, check current pity, and explore results across banners.
+Genshin-Analyzer-NEXT is a personal desktop project designed and developed to organize personal wish records and brings collection, importing, storage, analytics, and exporting into one app. It helps users revisit their wish history, check current pity, and explore results across banners.
 
-The interface uses Kotlin and Compose Desktop, with Java, SQLite, and a Node.js proxy service. This README currently covers building and launching on Windows only.
+The interface uses Kotlin and Compose Desktop, with Java, SQLite, and a Node.js proxy service. This README currently covers building and launching on Windows only. Regarding the game is mostly operates under Windows environment, so Linux/MacOS adaptation is deferred.
 
 ### Features
 
@@ -104,7 +104,7 @@ The interface uses Kotlin and Compose Desktop, with Java, SQLite, and a Node.js 
 - **Multiple accounts:** store records by UID and switch accounts in the interface.
 - **Wish statistics:** view wish totals, five-star and four-star counts, average pulls to a five-star, current pity, win rates, and win/loss streaks. Character event banners 301 and 400 share pity and guarantee state.
 - **History views:** explore a timeline, calendar, five-star history charts, and monthly primogem consumption statistics.
-- **Exports:** JSON (UIGF v3.0/v4.1), Excel, CSV, and HTML options. Interoperability with other community tools has not been verified; see the version notes below.
+- **Exports:** JSON (UIGF v3.0/v4.1), Excel, CSV, and HTML options. Interoperable with other community tools.
 - **Local storage and backups:** save records in SQLite and back up an existing database before importing or capturing records.
 - **Appearance and language:** Chinese and English interfaces, with light, dark, and system theme settings.
 
